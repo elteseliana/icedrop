@@ -9,9 +9,9 @@ Ice delivery in Ra'anana, every Friday. Plain HTML, CSS and JavaScript, with no 
 | `js/config.js` | **Settings**: price per kilo, kilo choices, delivery fee & free-delivery amount, delivery day/time, cutoff, WhatsApp/Bit number, Bit link, Google Sheet link, map center, Spotify link | ✅ Yes, this is the main one |
 | `js/texts.js` | **All the words** on the site, in English and Hebrew | ✅ Yes |
 | `index.html` | The page layout | Only for layout changes |
-| `css/style.css` | Colors and design (colors are at the very top) | Sometimes |
+| `css/style.css` | Colors and design. The mood board palette (Deep Chill, Ice Drop Blue, Glacier, Frostbite, Snow, Heat Wave) is at the very top | Sometimes |
 | `js/main.js`, `js/animations.js` | How things work | Usually no |
-| `assets/` | Logo, favicon, ice machine drawing (SVG) | Optional |
+| `assets/` | Logo, favicon, ice machine drawing (SVG). `assets/img/` has the photos from the mood board (swap a photo by saving a new one with the same name) | Optional |
 | `google-apps-script/Code.gs` | Script that puts orders in your Google Sheet | Paste into Google once |
 
 ## ✏️ Common changes

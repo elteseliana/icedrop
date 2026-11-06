@@ -3,31 +3,34 @@
    Colors are at the top. Change them here and the whole site follows.
    ===================================================================== */
 :root {
-  --ice-50:  #f2fbff;
-  --ice-100: #e3f5ff;
-  --ice-200: #bfe9ff;
-  --ice-300: #8fd6ff;
-  --ice-400: #5cc0ff;
-  --ice-500: #3fa9f5;
-  --ice-600: #1e88e5;
-  --ice-700: #1565c0;
-  --ice-900: #0b3a6e;
-  --pink:    #ff6fa8;
-  --pink-dark: #d6457f;
-  --mint:    #b6ffe0;
+  /* Mood board palette */
+  --ice-900: #0b3d66;   /* Deep Chill */
+  --ice-700: #1673b0;
+  --ice-600: #1e90d6;   /* Ice Drop Blue */
+  --ice-500: #39a8e2;
+  --ice-400: #5bc0eb;   /* Glacier */
+  --ice-300: #a8e0f5;   /* Frostbite */
+  --ice-200: #c9ecf9;
+  --ice-100: #dcf1fb;   /* Snow */
+  --ice-50:  #f2fafe;
+  --white:   #ffffff;
+  --heat:    #ff9f45;   /* Heat Wave (one warm hit of summer) */
+  --heat-dark: #e07a1f;
+  --pink:    var(--heat);
+  --pink-dark: #b9600f;
+  --mint:    #b6f0d8;
   --wa:      #25d366;
   --wa-dark: #128c4b;
-  --white:   #ffffff;
-  --text:    #0b3a6e;
-  --muted:   #4d7398;
+  --text:    #0b3d66;
+  --muted:   #4a6e8f;
   --danger:  #d93056;
 
   --radius: 22px;
   --radius-sm: 14px;
-  --shadow: 0 10px 30px rgba(30, 136, 229, 0.15), 0 2px 6px rgba(30, 136, 229, 0.08);
+  --shadow: 0 10px 30px rgba(11, 61, 102, 0.12), 0 2px 6px rgba(30, 144, 214, 0.10);
   --shadow-pop: 0 6px 0 var(--ice-700);
-  --font-head: "Fredoka", "Rubik", system-ui, sans-serif;
-  --font-body: "Rubik", "Fredoka", system-ui, -apple-system, "Segoe UI", Arial, sans-serif;
+  --font-head: "Fredoka", system-ui, sans-serif;
+  --font-body: "Fredoka", system-ui, -apple-system, "Segoe UI", Arial, sans-serif;
 }
 
 *, *::before, *::after { box-sizing: border-box; }
@@ -75,6 +78,8 @@ section, #thanks { scroll-margin-top: 80px; }
   box-shadow: var(--shadow-pop), inset 0 2px 0 rgba(255,255,255,.45);
 }
 .btn-primary:active { box-shadow: 0 3px 0 var(--ice-700), inset 0 2px 0 rgba(255,255,255,.45); }
+.btn-heat { color: var(--white); background: linear-gradient(180deg, #ffb46b, var(--heat)); box-shadow: 0 6px 0 var(--heat-dark), inset 0 2px 0 rgba(255,255,255,.45); }
+.btn-heat:active { box-shadow: 0 3px 0 var(--heat-dark); }
 .btn-ghost { color: var(--ice-700); background: var(--white); box-shadow: inset 0 0 0 2px var(--ice-300); }
 .btn-wa { color: var(--white); background: linear-gradient(180deg, #3ee07f, var(--wa)); box-shadow: 0 5px 0 var(--wa-dark); }
 .btn-wa:active { box-shadow: 0 2px 0 var(--wa-dark); }
@@ -102,7 +107,10 @@ section, #thanks { scroll-margin-top: 80px; }
 }
 .header-inner { display: flex; align-items: center; gap: 10px; min-height: 64px; }
 .logo { display: inline-flex; align-items: center; gap: 8px; text-decoration: none; color: var(--ice-700); font-size: 1.35rem; }
-.logo img { width: 40px; height: 40px; }
+.logo img { width: 34px; height: 34px; flex: none; }
+.logo-text { display: flex; flex-direction: column; line-height: 1; white-space: nowrap; }
+.logo-name { font-family: var(--font-head); font-weight: 600; font-size: 1.05rem; letter-spacing: .08em; color: var(--ice-600); }
+.logo-tag { font-family: var(--font-head); font-weight: 500; font-size: .42rem; letter-spacing: .16em; color: var(--ice-400); margin-top: 4px; }
 .nav { display: none; gap: 4px; margin-inline-start: auto; }
 .nav a { text-decoration: none; font-weight: 500; padding: .45em .8em; border-radius: 999px; }
 .nav a:hover { background: var(--ice-100); }
@@ -118,83 +126,82 @@ section, #thanks { scroll-margin-top: 80px; }
 /* ---------- Hero ---------- */
 .hero {
   position: relative; overflow: hidden;
-  padding: 48px 0 140px;
+  padding: 36px 0 210px;
   background:
-    radial-gradient(circle at 80% 20%, rgba(255,255,255,.9), transparent 35%),
-    linear-gradient(180deg, var(--ice-200) 0%, var(--ice-100) 60%, var(--ice-50) 100%);
+    radial-gradient(circle at 85% 10%, rgba(255,255,255,.95), transparent 30%),
+    linear-gradient(180deg, var(--ice-100) 0%, #eaf7fd 55%, var(--ice-50) 100%);
 }
-.hero::before, .hero::after { /* floating sparkles */
-  content: "✦"; position: absolute; color: var(--white); font-size: 28px; opacity: .9;
-  top: 24px; inset-inline-end: 8%; text-shadow: 0 0 12px var(--ice-300);
-}
-.hero::after { top: auto; bottom: 120px; inset-inline-end: auto; inset-inline-start: 6%; font-size: 18px; }
 .hero-inner { position: relative; z-index: 2; text-align: center; }
 .kicker {
-  display: inline-block; font-family: var(--font-head); font-weight: 600; font-size: .9rem;
-  background: var(--white); color: var(--ice-700); padding: .4em 1em; border-radius: 999px;
-  box-shadow: var(--shadow); margin-bottom: 18px;
+  display: inline-block; font-family: var(--font-head); font-weight: 500; font-size: .9rem;
+  background: rgba(255,255,255,.85); color: var(--ice-700); padding: .35em 1em; border-radius: 999px;
+  box-shadow: var(--shadow); margin-bottom: 6px;
+}
+/* Big bubbly glossy "Ice Drop" */
+.hero-word {
+  font-family: var(--font-head); font-weight: 700; line-height: .95; margin: 0;
+  font-size: clamp(4.2rem, 22vw, 8.5rem); letter-spacing: -.01em;
+  background: linear-gradient(180deg, #bfeaff 0%, #5bc0eb 38%, #1e90d6 75%, #1673b0 100%);
+  -webkit-background-clip: text; background-clip: text; color: transparent;
+  -webkit-text-stroke: 7px #ffffff; paint-order: stroke fill;
+  filter: drop-shadow(0 5px 0 #1673b0) drop-shadow(0 14px 18px rgba(11,61,102,.28));
+}
+.hero-tagline {
+  font-family: var(--font-head); font-weight: 600; letter-spacing: .32em; font-size: .85rem;
+  color: var(--ice-900); margin: 12px 0 18px; padding-inline-start: .32em;
 }
 .hero-title {
-  font-size: clamp(2rem, 8.5vw, 3.8rem); font-weight: 700; color: var(--ice-900);
-  max-width: 14em; margin: 0 auto .35em;
-  text-shadow: 0 3px 0 rgba(255,255,255,.9);
+  font-size: clamp(1.45rem, 5.6vw, 2.3rem); font-weight: 600; color: var(--ice-900);
+  max-width: 20em; margin: 0 auto .4em;
 }
-.hero-sub { font-size: 1.1rem; color: var(--muted); max-width: 34em; margin: 0 auto 1.4em; }
+.hero-sub { font-size: 1.05rem; color: var(--muted); max-width: 32em; margin: 0 auto 1.3em; }
 .hero-ctas { display: flex; flex-wrap: wrap; gap: 12px; justify-content: center; margin-bottom: 18px; }
 .hero-badge {
-  display: inline-block; font-weight: 700; color: var(--pink-dark);
-  background: #fff0f6; padding: .35em .9em; border-radius: 999px; border: 2px dashed var(--pink);
+  display: inline-block; font-weight: 600; color: var(--pink-dark);
+  background: #fff4e8; padding: .35em .9em; border-radius: 999px; border: 2px dashed var(--heat);
   transform: rotate(-2deg);
 }
-.hero-snowbank {
-  position: absolute; inset-inline: 0; bottom: -2px; height: 70px; z-index: 1;
-  background:
-    radial-gradient(60px 40px at 10% 100%, var(--white) 98%, transparent) ,
-    radial-gradient(90px 50px at 30% 100%, var(--white) 98%, transparent),
-    radial-gradient(70px 42px at 52% 100%, var(--white) 98%, transparent),
-    radial-gradient(100px 55px at 75% 100%, var(--white) 98%, transparent),
-    radial-gradient(70px 40px at 95% 100%, var(--white) 98%, transparent),
-    linear-gradient(0deg, var(--ice-50) 20px, transparent 21px);
+.hero-swoosh {
+  position: absolute; z-index: 1; left: -5%; width: 110%; overflow: visible; top: 70px; height: 150px; pointer-events: none;
 }
+.hero-swoosh path { fill: none; stroke: var(--heat); stroke-width: 22; stroke-linecap: round; opacity: .9; }
+.hero-cube {
+  position: absolute; z-index: 0; pointer-events: none; border-radius: 50%;
+  -webkit-mask-image: radial-gradient(circle, #000 45%, transparent 70%); mask-image: radial-gradient(circle, #000 45%, transparent 70%);
+}
+.hero-cube-1 { width: 220px; height: 220px; object-fit: cover; top: -40px; inset-inline-end: -70px; transform: rotate(12deg); opacity: .9; }
 
-/* ---------- Skate-stop effect ---------- */
-.skate { position: absolute; inset-inline: 0; bottom: 30px; height: 120px; z-index: 2; pointer-events: none; }
-.skate-svg { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; }
+/* ---------- Skate-stop effect: photo spray wipes in, stops sharply ---------- */
+.skate { position: absolute; inset-inline: 0; bottom: 0; height: 200px; z-index: 1; pointer-events: none; }
 html[dir="rtl"] .skate { transform: scaleX(-1); } /* skate the other way in Hebrew */
-.skate-line {
-  fill: none; stroke: url(#swooshGrad); stroke-width: 7; stroke-linecap: round;
-  stroke-dasharray: 1000; stroke-dashoffset: 1000;
+.skate-photo {
+  position: absolute; inset: 0;
+  background: url("../assets/img/snow-spray.jpg") center 60% / cover no-repeat;
+  -webkit-mask-image: linear-gradient(180deg, transparent 0%, #000 40%); mask-image: linear-gradient(180deg, transparent 0%, #000 40%);
+  clip-path: inset(0 100% 0 0);
 }
-.skate-line-2 { stroke-width: 3; opacity: .7; }
-.skate-cube {
-  position: absolute; left: 0; bottom: 18px; width: 56px; height: 56px;
-  transform: translateX(-80px); opacity: 0;
+.skate-edge {
+  position: absolute; bottom: 26px; left: 0; width: 120px; height: 6px; border-radius: 6px;
+  background: linear-gradient(90deg, transparent, #fff); box-shadow: 0 0 14px 4px rgba(255,255,255,.9);
+  opacity: 0;
 }
-.skate-spray { position: absolute; left: 76%; bottom: 40px; width: 0; height: 0; }
+.skate-spray { position: absolute; left: 80%; bottom: 40px; width: 0; height: 0; }
 .spray-bit {
   position: absolute; left: 0; top: 0; border-radius: 50%;
-  background: var(--white); box-shadow: 0 0 6px rgba(143, 214, 255, .9);
+  background: var(--white); box-shadow: 0 0 6px rgba(168, 224, 245, .9);
   will-change: transform, opacity;
 }
 .spray-bit.shard { border-radius: 2px; background: linear-gradient(135deg, #fff, var(--ice-300)); }
+.skate.run .skate-photo { animation: spray-wipe .8s cubic-bezier(.25, .9, .25, 1) forwards; }
+.skate.run .skate-edge { animation: edge-slide .8s cubic-bezier(.25, .9, .25, 1) forwards; }
+@keyframes spray-wipe { to { clip-path: inset(0 0 0 0); } }
+@keyframes edge-slide {
+  0% { opacity: 1; transform: translateX(-120px); }
+  85% { opacity: 1; transform: translateX(calc(80vw - 120px)); }
+  100% { opacity: 0; transform: translateX(calc(80vw - 120px)); }
+}
+.skate.done .skate-photo { clip-path: none; }
 
-/* run state (set by JS) */
-.skate.run .skate-line { animation: swoosh .9s cubic-bezier(.2, .8, .2, 1) forwards; }
-.skate.run .skate-line-2 { animation-delay: .05s; }
-.skate.run .skate-cube { animation: skate-cube .9s cubic-bezier(.2, .8, .2, 1) forwards, skate-wobble .5s .9s ease-out; }
-@keyframes swoosh { to { stroke-dashoffset: 0; } }
-@keyframes skate-cube {
-  0%   { transform: translateX(-80px) rotate(0deg); opacity: 1; }
-  85%  { transform: translateX(calc(76vw - 28px)) rotate(4deg); opacity: 1; }
-  100% { transform: translateX(calc(76vw - 28px)) rotate(-14deg); opacity: 1; }
-}
-@keyframes skate-wobble {
-  0% { transform: translateX(calc(76vw - 28px)) rotate(-14deg); }
-  40% { transform: translateX(calc(76vw - 28px)) rotate(6deg); }
-  100% { transform: translateX(calc(76vw - 28px)) rotate(0deg); }
-}
-.skate.done .skate-line { stroke-dashoffset: 0; }
-.skate.done .skate-cube { opacity: 1; transform: translateX(calc(76vw - 28px)); animation: none; }
 /* ---------- Ice machine + rain ---------- */
 .ice-machine {
   position: fixed; top: 0; left: 50%; z-index: 120; width: 200px;
@@ -234,19 +241,19 @@ html[dir="rtl"] .skate { transform: scaleX(-1); } /* skate the other way in Hebr
 .why { background: linear-gradient(180deg, var(--ice-50), var(--ice-100)); }
 .why-grid { display: grid; gap: 18px; margin-top: 28px; }
 .why-card {
-  background: var(--white); border-radius: var(--radius); padding: 26px 22px; text-align: center;
+  background: var(--white); border-radius: var(--radius); padding: 0 0 22px; text-align: center;
   box-shadow: var(--shadow); position: relative; overflow: hidden;
 }
-.why-card::after { content: ""; position: absolute; top: -40px; inset-inline-end: -40px; width: 110px; height: 110px; border-radius: 50%; background: var(--ice-100); z-index: 0; }
-.why-card > * { position: relative; z-index: 1; }
-.why-icon { width: 96px; height: 96px; margin: 0 auto 12px; filter: drop-shadow(0 6px 8px rgba(30,136,229,.18)); }
-.why-card h3 { font-size: 1.35rem; color: var(--ice-700); }
+.why-photo { width: 100%; height: 150px; object-fit: cover; margin-bottom: 16px; }
+.why-card h3, .why-card p { padding: 0 20px; }
+.why-card h3 { font-size: 1.35rem; color: var(--ice-600); }
 .why-card p { color: var(--muted); margin: 0; }
 
 /* Prices */
 .prices { background: var(--white); }
+.price-photo { display: block; width: calc(100% + 40px); max-width: none; height: 170px; object-fit: cover; object-position: center 40%; margin: -28px -20px 20px; }
 .price-hero {
-  text-align: center; border-radius: var(--radius); padding: 28px 20px 22px;
+  text-align: center; border-radius: var(--radius); padding: 28px 20px 22px; overflow: hidden;
   background: linear-gradient(160deg, var(--white), var(--ice-100));
   box-shadow: var(--shadow), inset 0 0 0 2px var(--ice-200);
   max-width: 560px; margin: 0 auto;
@@ -256,8 +263,8 @@ html[dir="rtl"] .skate { transform: scaleX(-1); } /* skate the other way in Hebr
 .price-tag-unit { font-family: var(--font-head); font-size: 1.4rem; font-weight: 600; color: var(--ice-700); }
 .price-examples { display: flex; flex-wrap: wrap; justify-content: center; gap: 8px; margin: 18px 0 14px; }
 .price-chip { display: inline-flex; gap: 6px; align-items: center; background: var(--white); border: 2px solid var(--ice-200); border-radius: 999px; padding: .35em .9em; font-size: .95rem; }
-.price-chip.is-free { border-color: var(--mint); background: #effff7; }
-.free-badge { display: inline-block; margin: 0; background: #fff0f6; color: var(--pink-dark); border: 2px dashed var(--pink); border-radius: 999px; padding: .4em 1em; font-weight: 500; }
+.price-chip.is-free { border-color: var(--heat); background: #fff4e8; }
+.free-badge { display: inline-block; margin: 0; background: #fff4e8; color: var(--pink-dark); border: 2px dashed var(--pink); border-radius: 999px; padding: .4em 1em; font-weight: 500; }
 .info-grid { display: grid; gap: 18px; margin-top: 26px; }
 .info-card { background: var(--ice-100); border-radius: var(--radius); padding: 22px; }
 .info-card h3 { font-size: 1.3rem; }
@@ -344,7 +351,7 @@ select { appearance: none; -webkit-appearance: none; font-family: var(--font-hea
 .summary dt { font-weight: 700; color: var(--muted); }
 .summary dd { margin: 0; overflow-wrap: anywhere; }
 .thanks .btn-wa { margin-top: 4px; }
-.thanks .reminder { background: #fff7fb; border: 2px solid #ffd0e3; border-radius: var(--radius-sm); padding: 12px 16px; font-size: .98rem; margin: 6px 0 16px; }
+.thanks .reminder { background: #fff8f0; border: 2px solid #ffd7b0; border-radius: var(--radius-sm); padding: 12px 16px; font-size: .98rem; margin: 6px 0 16px; }
 .thanks .hint { color: var(--muted); font-size: .92rem; margin-top: 10px; }
 .thanks #thanks-pause { margin: 6px 0 14px; }
 .thanks #new-order { margin-top: 8px; }
@@ -361,9 +368,16 @@ select { appearance: none; -webkit-appearance: none; font-family: var(--font-hea
 }
 @media (min-width: 860px) {
   body { font-size: 18px; }
+  .logo-name { font-size: 1.3rem; }
+  .logo-tag { font-size: .5rem; }
+  .logo img { width: 40px; height: 40px; }
   .nav { display: flex; }
   .header-actions { margin-inline-start: 8px; }
-  .hero { padding: 80px 0 170px; }
+  .hero { padding: 56px 0 260px; }
+  .skate { height: 260px; }
+  .hero-swoosh { top: 110px; height: 190px; }
+  .hero-cube-1 { width: 340px; height: 340px; inset-inline-end: 2%; top: 10px; }
+  .why-photo { height: 210px; }
   .why-grid { grid-template-columns: repeat(3, 1fr); }
   .info-grid { grid-template-columns: 1fr 1fr; }
   .map { height: 440px; }
@@ -381,6 +395,5 @@ select { appearance: none; -webkit-appearance: none; font-family: var(--font-hea
   html { scroll-behavior: auto; }
   *, *::before, *::after { animation-duration: .01ms !important; animation-iteration-count: 1 !important; transition-duration: .01ms !important; }
   .ice-machine, .ice-rain { display: none !important; }
-  .skate-line { stroke-dashoffset: 0; }
-  .skate-cube { opacity: 1; transform: translateX(calc(76vw - 28px)); }
+  .skate-photo { clip-path: none; }
 }

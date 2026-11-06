@@ -33,18 +33,18 @@
     }
     // body
     var grad = g.createLinearGradient(0, 0, s, s);
-    grad.addColorStop(0, "rgba(255,255,255,0.98)");
-    grad.addColorStop(0.45, "rgba(191,233,255,0.95)");
-    grad.addColorStop(1, "rgba(63,169,245,0.95)");
+    grad.addColorStop(0, "rgba(255,255,255,0.92)");
+    grad.addColorStop(0.5, "rgba(201,236,249,0.72)");
+    grad.addColorStop(1, "rgba(91,192,235,0.78)");
     roundRect(pad, pad, w, w, r);
     g.fillStyle = grad;
     g.fill();
-    g.lineWidth = Math.max(1.5, s * 0.05);
-    g.strokeStyle = "#2a8fd8";
+    g.lineWidth = Math.max(1.2, s * 0.035);
+    g.strokeStyle = "rgba(22,115,176,0.55)";
     g.stroke();
     // inner "depth" face
     var inner = g.createLinearGradient(0, s, s, 0);
-    inner.addColorStop(0, "rgba(30,136,229,0.35)");
+    inner.addColorStop(0, "rgba(30,144,214,0.28)");
     inner.addColorStop(1, "rgba(255,255,255,0)");
     roundRect(pad + w * 0.2, pad + w * 0.2, w * 0.68, w * 0.68, r * 0.7);
     g.fillStyle = inner;
@@ -208,8 +208,8 @@
     if (!skate) return;
     if (reducedMotion()) { skate.classList.add("done"); return; }
     skate.classList.add("run");
-    // the cube stops sharply at ~85% of the 0.9s animation
-    setTimeout(function () { spray(skate.querySelector(".skate-spray")); }, 760);
+
+    setTimeout(function () { spray(skate.querySelector(".skate-spray")); }, 650); // the spray stops sharply at ~85% of the wipe
   }
 
   function spray(holder) {

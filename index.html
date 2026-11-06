@@ -11,14 +11,14 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <title>Ice Drop — משלוח קרח עד הדלת ברעננה</title>
   <meta name="description" content="Ice Drop: cold ice delivered to your door in Ra'anana every Friday. משלוח קרח עד הדלת ברעננה בכל יום שישי.">
-  <meta name="theme-color" content="#3fa9f5">
+  <meta name="theme-color" content="#1e90d6">
   <meta property="og:title" content="Ice Drop 🧊">
   <meta property="og:description" content="Ra'anana is hot. Your freezer is empty. We've got you. 🧊">
   <link rel="icon" href="assets/favicon.svg" type="image/svg+xml">
 
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600;700&family=Rubik:wght@400;500;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;500;600;700&display=swap" rel="stylesheet">
 
   <!-- Leaflet map (free, no API key) -->
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
@@ -38,9 +38,9 @@
   <!-- ===== Header ===== -->
   <header class="site-header">
     <div class="wrap header-inner">
-      <a href="#top" class="logo" aria-label="Ice Drop">
-        <img src="assets/logo.svg" alt="" width="44" height="44">
-        <span class="brand" dir="ltr" lang="en">Ice Drop</span>
+      <a href="#top" class="logo" aria-label="Ice Drop" dir="ltr" lang="en">
+        <img src="assets/logo.svg" alt="" width="40" height="40">
+        <span class="logo-text"><span class="logo-name">ICE DROP</span><span class="logo-tag">COLDER DAYS AHEAD</span></span>
       </a>
       <nav class="nav" aria-label="Main">
         <a href="#why" data-t="navWhy">Why us</a>
@@ -69,34 +69,30 @@
   <main id="top">
     <!-- ===== Hero ===== -->
     <section class="hero">
+      <!-- orange "heat wave" swoosh behind the title -->
+      <svg class="hero-swoosh" viewBox="0 0 400 120" preserveAspectRatio="none" aria-hidden="true">
+        <path d="M-40 96 C 90 40, 240 120, 440 30" />
+      </svg>
+      <img class="hero-cube hero-cube-1" src="assets/img/ice-cubes.jpg" alt="" aria-hidden="true" width="510" height="496">
       <div class="wrap hero-inner">
         <p class="kicker" data-t="heroKicker"></p>
+        <p class="hero-word" dir="ltr" lang="en" aria-hidden="true">Ice Drop</p>
+        <p class="hero-tagline" dir="ltr" lang="en">COLDER DAYS AHEAD</p>
         <h1 class="hero-title" data-t="heroTitle"></h1>
         <p class="hero-sub" data-t="heroSub"></p>
         <div class="hero-ctas">
           <a href="#order" class="btn btn-primary btn-big" data-t="heroCta">Order ice</a>
-          <a href="#prices" class="btn btn-ghost" data-t="heroCta2">See prices</a>
+          <a href="#prices" class="btn btn-heat" data-t="heroCta2">See prices</a>
         </div>
         <p class="hero-badge" data-t="heroBadge" data-vars="window"></p>
       </div>
 
-      <!-- Skate-stop swoosh -->
+      <!-- Skate-stop: the snow spray slides in and stops sharply -->
       <div class="skate" aria-hidden="true">
-        <svg class="skate-svg" viewBox="0 0 1000 120" preserveAspectRatio="none">
-          <defs>
-            <linearGradient id="swooshGrad" x1="0" x2="1">
-              <stop offset="0" stop-color="#ffffff" stop-opacity="0"/>
-              <stop offset="0.6" stop-color="#bfe9ff"/>
-              <stop offset="1" stop-color="#ffffff"/>
-            </linearGradient>
-          </defs>
-          <path class="skate-line" d="M -20 92 C 250 92, 520 70, 760 78" />
-          <path class="skate-line skate-line-2" d="M -20 102 C 260 100, 520 84, 750 88" />
-        </svg>
-        <div class="skate-cube"><img src="assets/logo.svg" alt="" width="56" height="56"></div>
+        <div class="skate-photo"></div>
+        <div class="skate-edge"></div>
         <div class="skate-spray"></div>
       </div>
-      <div class="hero-snowbank" aria-hidden="true"></div>
     </section>
 
     <!-- ===== Story ===== -->
@@ -118,54 +114,17 @@
         <h2 class="section-title" data-t="whyTitle"></h2>
         <div class="why-grid">
           <article class="why-card">
-            <svg class="why-icon" viewBox="0 0 96 96" aria-hidden="true">
-              <defs>
-                <linearGradient id="fridge" x1="0" x2="1"><stop offset="0" stop-color="#ffffff"/><stop offset="1" stop-color="#cdeeff"/></linearGradient>
-                <linearGradient id="cubeG" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#ffffff"/><stop offset="1" stop-color="#7fcfff"/></linearGradient>
-              </defs>
-              <rect x="22" y="8" width="52" height="80" rx="10" fill="url(#fridge)" stroke="#2a8fd8" stroke-width="3"/>
-              <line x1="22" y1="38" x2="74" y2="38" stroke="#2a8fd8" stroke-width="3"/>
-              <rect x="64" y="16" width="4" height="14" rx="2" fill="#2a8fd8"/>
-              <rect x="64" y="46" width="4" height="18" rx="2" fill="#2a8fd8"/>
-              <g transform="rotate(-14 52 66)">
-                <rect x="40" y="54" width="26" height="26" rx="6" fill="url(#cubeG)" stroke="#2a8fd8" stroke-width="2.5"/>
-                <path d="M45 60 L54 58" stroke="#fff" stroke-width="3" stroke-linecap="round"/>
-              </g>
-              <circle cx="80" cy="20" r="12" fill="#ff6fa8"/>
-              <path d="M75 20 l4 4 l7 -8" stroke="#fff" stroke-width="3" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
-            </svg>
+            <img class="why-photo" src="assets/img/ice-machine-photo.jpg" alt="" width="510" height="496" loading="lazy">
             <h3 data-t="why1Title"></h3>
             <p data-t="why1Text"></p>
           </article>
           <article class="why-card">
-            <svg class="why-icon" viewBox="0 0 96 96" aria-hidden="true">
-              <defs>
-                <linearGradient id="bagG" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#ffd6e7"/><stop offset="1" stop-color="#ff8fbf"/></linearGradient>
-              </defs>
-              <path d="M24 34 h48 l-5 50 h-38 z" fill="url(#bagG)" stroke="#d6457f" stroke-width="3" stroke-linejoin="round"/>
-              <path d="M36 34 v-8 a12 12 0 0 1 24 0 v8" fill="none" stroke="#d6457f" stroke-width="3"/>
-              <path d="M30 46 l4 30" stroke="#fff" stroke-width="3" stroke-linecap="round" opacity="0.8"/>
-              <circle cx="48" cy="56" r="34" fill="none" stroke="#1e88e5" stroke-width="6"/>
-              <line x1="24" y1="80" x2="72" y2="32" stroke="#1e88e5" stroke-width="6" stroke-linecap="round"/>
-            </svg>
+            <img class="why-photo" src="assets/img/ice-bag.jpg" alt="" width="511" height="501" loading="lazy">
             <h3 data-t="why2Title"></h3>
             <p data-t="why2Text"></p>
           </article>
           <article class="why-card">
-            <svg class="why-icon" viewBox="0 0 96 96" aria-hidden="true">
-              <defs>
-                <linearGradient id="doorG" x1="0" x2="1"><stop offset="0" stop-color="#5cc0ff"/><stop offset="1" stop-color="#1e88e5"/></linearGradient>
-                <linearGradient id="iceBag" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#ffffff"/><stop offset="1" stop-color="#bfe9ff"/></linearGradient>
-              </defs>
-              <rect x="14" y="8" width="44" height="80" rx="6" fill="url(#doorG)" stroke="#0d47a1" stroke-width="3"/>
-              <circle cx="50" cy="50" r="3.5" fill="#fff59d"/>
-              <rect x="22" y="16" width="28" height="22" rx="4" fill="#bfe9ff" opacity="0.6"/>
-              <path d="M54 50 q14 -6 28 0 l-3 36 h-22 z" fill="url(#iceBag)" stroke="#2a8fd8" stroke-width="3" stroke-linejoin="round"/>
-              <rect x="60" y="60" width="9" height="9" rx="2" fill="#9edcff"/>
-              <rect x="70" y="68" width="9" height="9" rx="2" fill="#9edcff"/>
-              <rect x="61" y="73" width="8" height="8" rx="2" fill="#9edcff"/>
-              <path d="M84 30 l2 6 l6 2 l-6 2 l-2 6 l-2 -6 l-6 -2 l6 -2 z" fill="#fff" stroke="#5cc0ff" stroke-width="1.5"/>
-            </svg>
+            <img class="why-photo" src="assets/img/ice-cubes.jpg" alt="" width="510" height="496" loading="lazy">
             <h3 data-t="why3Title"></h3>
             <p data-t="why3Text"></p>
           </article>
@@ -180,6 +139,7 @@
         <p class="section-sub" data-t="pricesSub"></p>
         <!-- Built automatically from js/config.js -->
         <div class="price-hero">
+          <img class="price-photo" src="assets/img/ice-cubes-tall.jpg" alt="" width="900" height="1323" loading="lazy">
           <div class="price-tag">
             <span class="price-tag-amount" dir="ltr" id="price-per-kg"></span>
             <span class="price-tag-unit" data-t="perKg"></span>
@@ -332,9 +292,9 @@
 
   <footer class="site-footer">
     <div class="wrap footer-inner">
-      <div class="logo logo-footer">
+      <div class="logo logo-footer" dir="ltr" lang="en">
         <img src="assets/logo.svg" alt="" width="40" height="40">
-        <span class="brand" dir="ltr" lang="en">Ice Drop</span>
+        <span class="logo-text"><span class="logo-name">ICE DROP</span><span class="logo-tag">COLDER DAYS AHEAD</span></span>
       </div>
       <p data-t="footerTag"></p>
       <a class="btn btn-wa js-wa-contact" target="_blank" rel="noopener" href="#">
