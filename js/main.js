@@ -1,5 +1,5 @@
 /* =====================================================================
-   🧊 ICE DROP — MAIN SCRIPT
+   ICE DROP — MAIN SCRIPT
    You normally don't need to edit this file.
    Prices/times/numbers → js/config.js     Words → js/texts.js
    ===================================================================== */
@@ -8,7 +8,7 @@
 
   var CFG = window.ICE_DROP_CONFIG;
   var TEXTS = window.ICE_DROP_TEXTS;
-  var FX = window.IceDropFX || { machineRain: function (cb) { cb && cb(); }, skateStop: function () {}, celebrate: function () {} };
+  var FX = window.IceDropFX || { frostIn: function () {}, celebrate: function () {} };
   var LANG_KEY = "icedrop-lang";
   var lang = "he";
   var lastOrder = null;
@@ -266,14 +266,14 @@
   }
   function typeLabel(o, l) {
     var T = TEXTS[l || lang];
-    return o.orderType === "weekly" ? "📅 " + T.typeWeekly : T.typeOnce;
+    return o.orderType === "weekly" ? T.typeWeekly : T.typeOnce;
   }
   function payLabel(o, l) {
     var T = TEXTS[l || lang];
     return o.payment === "bit" ? T.payBit : T.payCash;
   }
   function iceLabel(o, l) { return o.kg + ((l || lang) === "he" ? " ק״ג" : " kg") + " (" + money(o.icePrice) + ")"; }
-  function feeLabel(o, l) { return o.deliveryFee ? money(o.deliveryFee) : TEXTS[l || lang].free + " 🎉"; }
+  function feeLabel(o, l) { return o.deliveryFee ? money(o.deliveryFee) : TEXTS[l || lang].free; }
   function totalLabel(o, l) {
     return money(o.total) + (o.orderType === "weekly" ? " " + TEXTS[l || lang].totalWeekly : "");
   }
@@ -535,9 +535,12 @@
     // Update "which Friday" text if the page stays open past the cutoff
     setInterval(function () { if (!lastOrder) applyTexts(); }, 5 * 60 * 1000);
 
-    // Animations: machine rain first, skate-stop right after
-    FX.machineRain(function () {});
-    setTimeout(FX.skateStop, FX.reducedMotion && FX.reducedMotion() ? 0 : 1400);
+    // Opening animation: frost creeps over the screen, then clears.
+    // Start once the page has loaded (or after 1.2 s at most), so people see it.
+    var frostStarted = false;
+    function startFrost() { if (!frostStarted) { frostStarted = true; FX.frostIn(); } }
+    if (document.readyState === "complete") startFrost();
+    else { window.addEventListener("load", startFrost); setTimeout(startFrost, 1200); }
   }
 
   if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", start);
