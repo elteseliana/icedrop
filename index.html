@@ -1,1049 +1,397 @@
-<!DOCTYPE html>
+<!doctype html>
+<!--
+  🧊 ICE DROP — main page.
+  Most words are NOT here. They live in js/texts.js (English + Hebrew).
+  Prices, times and phone numbers live in js/config.js.
+  Elements with data-t="someKey" get their words from texts.js.
+-->
 <html lang="he" dir="rtl">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>שולי קורני · מאמנת ADHD והורים · רעננה</title>
-  <meta name="description" content="שולי קורני — מאמנת ADHD ומאמנת הורים מוסמכת מאוניברסיטת בר-אילן. ליווי ילדים, מבוגרים והורים בעברית ובאנגלית, מתוך רעננה." />
-  <link rel="preconnect" href="https://fonts.googleapis.com" />
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Assistant:wght@300;400;500;600;700&family=Frank+Ruhl+Libre:wght@400;500;700;900&display=swap" rel="stylesheet" />
-  <style>
-    :root {
-      --rose:        #C4847A;
-      --rose-dark:   #A96A60;
-      --rose-tint:   #F7ECE8;
-      --sage:        #8FA68E;
-      --sage-deep:   #5E7A5D;
-      --sage-tint:   #EEF2EC;
-      --ivory:       #FBF8F3;
-      --cream:       #F3ECE1;
-      --ink:         #2C2825;
-      --ink-soft:    #6C645E;
-      --line:        rgba(44, 40, 37, 0.10);
-      --white:       #FFFFFF;
-      --whatsapp:    #25D366;
-      --whatsapp-d:  #1DA851;
-      --ease:        cubic-bezier(0.19, 1, 0.22, 1);
-      --shadow-sm:   0 8px 24px rgba(44, 40, 37, 0.06);
-      --shadow-lg:   0 30px 70px rgba(44, 40, 37, 0.12);
-    }
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Ice Drop — משלוח קרח עד הדלת ברעננה</title>
+  <meta name="description" content="Ice Drop: cold ice delivered to your door in Ra'anana every Friday. משלוח קרח עד הדלת ברעננה בכל יום שישי.">
+  <meta name="theme-color" content="#3fa9f5">
+  <meta property="og:title" content="Ice Drop 🧊">
+  <meta property="og:description" content="Ra'anana is hot. Your freezer is empty. We've got you. 🧊">
+  <link rel="icon" href="assets/favicon.svg" type="image/svg+xml">
 
-    * { margin: 0; padding: 0; box-sizing: border-box; }
-    html { scroll-behavior: smooth; }
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600;700&family=Rubik:wght@400;500;700&display=swap" rel="stylesheet">
 
-    body {
-      font-family: 'Assistant', system-ui, sans-serif;
-      color: var(--ink);
-      background: var(--ivory);
-      line-height: 1.75;
-      font-weight: 400;
-      -webkit-font-smoothing: antialiased;
-      text-rendering: optimizeLegibility;
-      overflow-x: hidden;
-    }
+  <!-- Leaflet map (free, no API key) -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+        integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="">
 
-    h1, h2, h3, h4 {
-      font-family: 'Frank Ruhl Libre', Georgia, serif;
-      line-height: 1.16;
-      font-weight: 700;
-      letter-spacing: -0.012em;
-    }
-
-    .wrap { width: min(1140px, 88%); margin-inline: auto; }
-    section { padding: clamp(4.5rem, 10vw, 8rem) 0; position: relative; }
-
-    ::selection { background: var(--rose); color: #fff; }
-
-    /* ============ Shared bits ============ */
-    .eyebrow {
-      display: inline-flex;
-      align-items: center;
-      gap: 0.65rem;
-      font-size: 0.82rem;
-      font-weight: 600;
-      letter-spacing: 0.28em;
-      color: var(--rose);
-    }
-    .eyebrow::before {
-      content: "";
-      width: 30px; height: 1.5px;
-      background: var(--rose);
-      display: inline-block;
-    }
-
-    .index {
-      font-family: 'Frank Ruhl Libre', serif;
-      font-size: 0.95rem;
-      font-weight: 500;
-      color: var(--sage-deep);
-      letter-spacing: 0.1em;
-    }
-
-    /* ============ Word-reveal headlines ============ */
-    .reveal-text .word {
-      display: inline-block;
-      overflow: hidden;
-      vertical-align: top;
-      /* horizontal room so italic glyphs (e.g. "ADHD") aren't clipped by the mask;
-         negative margin keeps word spacing unchanged, vertical mask stays intact */
-      padding-inline: 0.16em;
-      margin-inline: -0.16em;
-    }
-    .reveal-text .inner {
-      display: inline-block;
-      transform: translateY(112%);
-      transition: transform 0.9s var(--ease);
-      transition-delay: calc(var(--i) * 0.05s);
-    }
-    .reveal-text.in .inner { transform: translateY(0); }
-
-    /* ============ Block reveals ============ */
-    .reveal {
-      opacity: 0;
-      transform: translateY(40px);
-      transition: opacity 1s var(--ease), transform 1s var(--ease);
-      will-change: opacity, transform;
-    }
-    .reveal.in { opacity: 1; transform: none; }
-    .reveal.d1 { transition-delay: 0.10s; }
-    .reveal.d2 { transition-delay: 0.20s; }
-    .reveal.d3 { transition-delay: 0.30s; }
-    .reveal.d4 { transition-delay: 0.40s; }
-
-    @media (prefers-reduced-motion: reduce) {
-      .reveal, .reveal-text .inner { opacity: 1 !important; transform: none !important; transition: none !important; }
-    }
-
-    /* ============ Buttons ============ */
-    .btn {
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      gap: 0.7rem;
-      font-family: 'Assistant', sans-serif;
-      font-weight: 600;
-      font-size: 1.05rem;
-      padding: 1.05rem 2.4rem;
-      border-radius: 999px;
-      text-decoration: none;
-      cursor: pointer;
-      border: none;
-      transition: transform 0.4s var(--ease), box-shadow 0.4s var(--ease), background 0.4s var(--ease);
-    }
-    .btn svg { width: 1.35em; height: 1.35em; fill: currentColor; }
-    .btn-primary {
-      background: var(--rose);
-      color: #fff;
-      box-shadow: 0 14px 34px rgba(196, 132, 122, 0.32);
-    }
-    .btn-primary:hover {
-      background: var(--rose-dark);
-      transform: translateY(-3px);
-      box-shadow: 0 22px 46px rgba(196, 132, 122, 0.42);
-    }
-
-    /* ============ Nav ============ */
-    .nav {
-      position: fixed;
-      inset: 0 0 auto 0;
-      z-index: 70;
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      padding: 1.3rem clamp(1.2rem, 5vw, 3rem);
-      transition: background 0.4s var(--ease), padding 0.4s var(--ease), box-shadow 0.4s var(--ease);
-    }
-    .nav.scrolled {
-      background: rgba(251, 248, 243, 0.82);
-      backdrop-filter: blur(14px);
-      -webkit-backdrop-filter: blur(14px);
-      padding-top: 0.85rem;
-      padding-bottom: 0.85rem;
-      box-shadow: 0 1px 0 var(--line);
-    }
-    .brand { display: flex; align-items: center; gap: 0.7rem; text-decoration: none; }
-    .brand .mono {
-      width: 42px; height: 42px;
-      display: grid; place-items: center;
-      border-radius: 50%;
-      border: 1.5px solid var(--rose);
-      color: var(--rose);
-      font-family: 'Frank Ruhl Libre', serif;
-      font-weight: 700;
-      font-size: 1.35rem;
-      line-height: 1;
-    }
-    .brand .brand-name {
-      font-family: 'Frank Ruhl Libre', serif;
-      font-weight: 500;
-      font-size: 1.25rem;
-      color: var(--ink);
-    }
-    .nav-links { display: flex; align-items: center; gap: 1.6rem; }
-    .nav-links a.navlink {
-      text-decoration: none;
-      color: var(--ink-soft);
-      font-weight: 500;
-      font-size: 0.98rem;
-      transition: color 0.3s var(--ease);
-      position: relative;
-    }
-    .nav-links a.navlink::after {
-      content: ""; position: absolute; bottom: -5px; inset-inline-end: 0;
-      width: 0; height: 1.5px; background: var(--rose);
-      transition: width 0.35s var(--ease);
-    }
-    .nav-links a.navlink:hover { color: var(--rose); }
-    .nav-links a.navlink:hover::after { width: 100%; }
-
-    .lang-toggle {
-      background: none;
-      border: 1.5px solid var(--line);
-      color: var(--ink);
-      font-family: 'Assistant', sans-serif;
-      font-weight: 600;
-      font-size: 0.88rem;
-      letter-spacing: 0.02em;
-      padding: 0.45rem 0.95rem;
-      border-radius: 999px;
-      cursor: pointer;
-      line-height: 1;
-      transition: border-color 0.3s var(--ease), color 0.3s var(--ease), background 0.3s var(--ease);
-    }
-    .lang-toggle:hover { border-color: var(--rose); color: var(--rose); }
-
-    .nav-cta {
-      display: inline-flex; align-items: center; gap: 0.5rem;
-      padding: 0.6rem 1.4rem;
-      border-radius: 999px;
-      background: var(--rose);
-      color: #fff !important;
-      font-weight: 600;
-      font-size: 0.95rem;
-      text-decoration: none;
-      transition: background 0.3s var(--ease), transform 0.3s var(--ease);
-    }
-    .nav-cta:hover { background: var(--rose-dark); transform: translateY(-2px); }
-    .nav-cta svg { width: 1.1em; height: 1.1em; fill: currentColor; }
-    @media (max-width: 820px) { .nav-links .navlink, .nav-cta .nav-cta-label { display: none; } }
-    @media (max-width: 820px) { .nav-cta { padding: 0.6rem; } }
-
-    /* ============ Hero ============ */
-    .hero {
-      padding-top: clamp(8rem, 16vw, 11rem);
-      padding-bottom: clamp(4rem, 8vw, 6rem);
-      overflow: hidden;
-    }
-    .hero-grid {
-      display: grid;
-      grid-template-columns: 1.15fr 0.85fr;
-      gap: clamp(2rem, 6vw, 5rem);
-      align-items: center;
-    }
-    .hero h1 {
-      font-size: clamp(2.6rem, 6.2vw, 5rem);
-      font-weight: 900;
-      color: var(--ink);
-      margin: 1.6rem 0 0;
-    }
-    .hero h1 .inner.accent { color: var(--rose); }
-    .hero .subtitle {
-      font-size: clamp(1.1rem, 2.1vw, 1.32rem);
-      color: var(--ink-soft);
-      font-weight: 300;
-      max-width: 44ch;
-      margin-top: 1.7rem;
-      line-height: 1.7;
-    }
-    .hero .name {
-      font-family: 'Frank Ruhl Libre', serif;
-      font-weight: 500;
-      font-size: clamp(1.5rem, 3vw, 2.1rem);
-      color: var(--ink);
-      margin-top: 2rem;
-      display: inline-flex;
-      align-items: center;
-      gap: 0.9rem;
-    }
-    .hero .name::before {
-      content: ""; width: 40px; height: 2px; background: var(--rose);
-    }
-    .hero .cta-row { margin-top: 2.4rem; display: flex; align-items: center; gap: 1.4rem; flex-wrap: wrap; }
-    .hero .trust { font-size: 0.95rem; color: var(--ink-soft); font-weight: 300; }
-    .hero .trust strong { color: var(--ink); font-weight: 600; }
-
-    /* Portrait frame */
-    .portrait {
-      position: relative;
-      aspect-ratio: 3 / 3.7;
-      max-width: 380px;
-      margin-inline: auto;
-    }
-    .portrait .frame {
-      position: absolute;
-      inset: 0;
-      border-radius: 220px 220px 22px 22px;
-      overflow: hidden;
-      background:
-        radial-gradient(circle at 50% 30%, rgba(255,255,255,0.55), transparent 55%),
-        linear-gradient(165deg, var(--rose-tint), var(--sage-tint));
-      box-shadow: var(--shadow-lg);
-      display: grid;
-      place-items: center;
-      z-index: 2;
-    }
-    .portrait .frame .ph { text-align: center; color: var(--rose-dark); }
-    .portrait .frame .ph .glyph {
-      font-family: 'Frank Ruhl Libre', serif;
-      font-size: 6rem;
-      line-height: 1;
-      opacity: 0.55;
-    }
-    .portrait .frame .ph small {
-      display: block;
-      margin-top: 0.8rem;
-      font-size: 0.85rem;
-      font-weight: 500;
-      letter-spacing: 0.05em;
-      color: var(--ink-soft);
-      opacity: 0.8;
-    }
-    .portrait .block {
-      position: absolute;
-      width: 78%; height: 78%;
-      bottom: -22px; inset-inline-start: -22px;
-      border: 1.5px solid var(--sage);
-      border-radius: 180px 180px 18px 18px;
-      z-index: 1;
-    }
-    .portrait .dot {
-      position: absolute;
-      top: -16px; inset-inline-end: -10px;
-      width: 70px; height: 70px;
-      border-radius: 50%;
-      background: var(--rose);
-      opacity: 0.14;
-      z-index: 0;
-    }
-
-    @media (max-width: 820px) {
-      .hero-grid { grid-template-columns: 1fr; }
-      .hero .portrait-col { order: -1; }
-      .portrait { max-width: 300px; margin-bottom: 1rem; }
-    }
-
-    /* ============ Section head ============ */
-    .section-head { max-width: 640px; margin-bottom: clamp(2.6rem, 5vw, 4rem); }
-    .section-head .index { display: block; margin-bottom: 1rem; }
-    .section-head h2 {
-      font-size: clamp(2rem, 4.6vw, 3rem);
-      color: var(--ink);
-      margin-top: 0.5rem;
-    }
-    .section-head.center { margin-inline: auto; text-align: center; }
-    .section-head.center .eyebrow { justify-content: center; }
-
-    /* ============ Services ============ */
-    .services { background: var(--white); }
-    .cards {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(248px, 1fr));
-      gap: 1.4rem;
-    }
-    .card {
-      position: relative;
-      background: var(--ivory);
-      border: 1px solid var(--line);
-      border-radius: 20px;
-      padding: 2.5rem 2rem 2.2rem;
-      overflow: hidden;
-      transition: transform 0.5s var(--ease), box-shadow 0.5s var(--ease), border-color 0.5s var(--ease);
-    }
-    .card::before {
-      content: "";
-      position: absolute; inset: 0 0 auto 0;
-      height: 3px;
-      background: var(--rose);
-      transform: scaleX(0);
-      transform-origin: inset-inline-end;
-      transition: transform 0.5s var(--ease);
-    }
-    .card:hover { transform: translateY(-9px); box-shadow: var(--shadow-lg); border-color: transparent; }
-    .card:hover::before { transform: scaleX(1); }
-    .card .num {
-      position: absolute;
-      top: 1.4rem; inset-inline-start: 1.6rem;
-      font-family: 'Frank Ruhl Libre', serif;
-      font-size: 1rem;
-      color: var(--ink);
-      opacity: 0.22;
-    }
-    .card .icon {
-      width: 54px; height: 54px;
-      display: grid; place-items: center;
-      border-radius: 15px;
-      margin-bottom: 1.4rem;
-      background: var(--rose-tint);
-      color: var(--rose-dark);
-    }
-    .card:nth-child(2n) .icon { background: var(--sage-tint); color: var(--sage-deep); }
-    .card .icon svg { width: 26px; height: 26px; stroke: currentColor; fill: none; stroke-width: 1.5; stroke-linecap: round; stroke-linejoin: round; }
-    .card h3 { font-size: 1.4rem; color: var(--ink); margin-bottom: 0.6rem; }
-    .card p { color: var(--ink-soft); font-size: 1rem; font-weight: 300; line-height: 1.7; }
-
-    .price-line {
-      text-align: center;
-      margin-top: clamp(2.4rem, 5vw, 3.4rem);
-      font-family: 'Frank Ruhl Libre', serif;
-      font-size: clamp(1.15rem, 2.6vw, 1.5rem);
-      font-weight: 500;
-      color: var(--rose-dark);
-    }
-    .price-line strong { color: var(--ink); font-weight: 700; }
-
-    /* ============ Process ============ */
-    .process { background: var(--sage-tint); }
-    .steps {
-      display: grid;
-      grid-template-columns: repeat(3, 1fr);
-      gap: 2rem;
-    }
-    .step { position: relative; }
-    .step .big {
-      font-family: 'Frank Ruhl Libre', serif;
-      font-weight: 900;
-      font-size: clamp(3rem, 7vw, 4.6rem);
-      color: var(--rose);
-      line-height: 1;
-      opacity: 0.9;
-    }
-    .step h3 { font-size: 1.4rem; margin: 0.6rem 0 0.5rem; color: var(--ink); }
-    .step p { color: var(--ink-soft); font-weight: 300; font-size: 1rem; }
-    .step::after {
-      content: "";
-      position: absolute; top: 1.6rem; inset-inline-start: -1rem;
-      width: 2rem; height: 1.5px;
-      background: var(--rose);
-      opacity: 0.4;
-    }
-    .step:first-child::after { display: none; }
-    @media (max-width: 720px) {
-      .steps { grid-template-columns: 1fr; gap: 2.4rem; }
-      .step::after { display: none; }
-    }
-
-    /* ============ About ============ */
-    .about { background: var(--white); }
-    .about-grid {
-      display: grid;
-      grid-template-columns: 0.85fr 1.15fr;
-      gap: clamp(2rem, 6vw, 4.5rem);
-      align-items: center;
-    }
-    .about-photo {
-      position: relative;
-      aspect-ratio: 4 / 4.4;
-      border-radius: 20px;
-      overflow: hidden;
-      background:
-        radial-gradient(circle at 50% 35%, rgba(255,255,255,0.5), transparent 55%),
-        linear-gradient(160deg, var(--sage-tint), var(--rose-tint));
-      box-shadow: var(--shadow-lg);
-      display: grid; place-items: center;
-    }
-    .about-photo .ph { text-align: center; color: var(--sage-deep); }
-    .about-photo .ph .glyph { font-family: 'Frank Ruhl Libre', serif; font-size: 5rem; opacity: 0.5; line-height: 1; }
-    .about-photo .ph small { display: block; margin-top: 0.6rem; font-size: 0.82rem; color: var(--ink-soft); opacity: 0.8; }
-    .about-text h2 { font-size: clamp(1.9rem, 4.3vw, 2.8rem); color: var(--ink); margin: 0.6rem 0 1.4rem; }
-    .about-text p { color: var(--ink-soft); font-size: 1.08rem; font-weight: 300; line-height: 1.85; margin-bottom: 1.1rem; }
-    .about-text .signature {
-      font-family: 'Frank Ruhl Libre', serif;
-      font-weight: 500; color: var(--rose); font-size: 1.45rem; margin-top: 1.4rem;
-    }
-    @media (max-width: 820px) {
-      .about-grid { grid-template-columns: 1fr; }
-      .about-photo { max-width: 300px; margin-inline: auto; }
-      .about-text { text-align: center; }
-    }
-
-    /* ============ Closing ============ */
-    .closing { background: var(--white); text-align: center; }
-    .closing p {
-      font-family: 'Frank Ruhl Libre', serif;
-      font-weight: 500;
-      font-size: clamp(1.8rem, 4.6vw, 3.1rem);
-      color: var(--ink);
-      max-width: 22ch;
-      margin-inline: auto;
-      line-height: 1.4;
-    }
-    .closing p em { font-style: normal; color: var(--rose); }
-
-    /* ============ Testimonials ============ */
-    .testimonials { background: var(--cream); }
-    .testimonials .quote {
-      max-width: 860px;
-      margin-inline: auto;
-      background: var(--white);
-      border-radius: 24px;
-      padding: clamp(2.2rem, 5vw, 3.6rem);
-      box-shadow: var(--shadow-lg);
-      position: relative;
-      text-align: start;
-    }
-    .testimonials .mark {
-      font-family: 'Frank Ruhl Libre', serif;
-      font-size: 4.5rem; line-height: 0.7;
-      color: var(--rose); opacity: 0.3;
-      display: block; height: 2rem;
-    }
-    .testimonials .stars { color: var(--rose); letter-spacing: 0.18em; font-size: 0.95rem; margin-bottom: 1.2rem; }
-    .testimonials .qtext p {
-      color: var(--ink);
-      font-size: clamp(1.02rem, 2vw, 1.16rem);
-      font-weight: 400;
-      line-height: 1.9;
-      margin-bottom: 1.1rem;
-    }
-    .testimonials .qtext p:last-child { margin-bottom: 0; }
-    .testimonials .who {
-      display: block;
-      margin-top: 1.8rem;
-      color: var(--sage-deep);
-      font-weight: 600;
-      font-size: 1rem;
-    }
-
-    /* ============ FAQ ============ */
-    .faq { background: var(--ivory); }
-    .faq-list { max-width: 760px; margin-inline: auto; }
-    .faq-item { border-bottom: 1px solid var(--line); }
-    .faq-item summary {
-      list-style: none;
-      cursor: pointer;
-      padding: 1.5rem 0;
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: 1rem;
-      font-family: 'Frank Ruhl Libre', serif;
-      font-weight: 500;
-      font-size: clamp(1.15rem, 2.4vw, 1.4rem);
-      color: var(--ink);
-      transition: color 0.3s var(--ease);
-    }
-    .faq-item summary::-webkit-details-marker { display: none; }
-    .faq-item summary:hover { color: var(--rose); }
-    .faq-item .plus {
-      flex: none;
-      width: 30px; height: 30px;
-      position: relative;
-      border-radius: 50%;
-      border: 1.5px solid var(--rose);
-      transition: transform 0.4s var(--ease), background 0.3s var(--ease);
-    }
-    .faq-item .plus::before, .faq-item .plus::after {
-      content: ""; position: absolute; top: 50%; left: 50%;
-      background: var(--rose);
-      transition: transform 0.3s var(--ease), background 0.3s var(--ease);
-    }
-    .faq-item .plus::before { width: 12px; height: 1.5px; transform: translate(-50%, -50%); }
-    .faq-item .plus::after { width: 1.5px; height: 12px; transform: translate(-50%, -50%); }
-    .faq-item[open] .plus { transform: rotate(135deg); background: var(--rose); }
-    .faq-item[open] .plus::before, .faq-item[open] .plus::after { background: #fff; }
-    .faq-item .answer {
-      overflow: hidden;
-      color: var(--ink-soft);
-      font-weight: 300;
-      font-size: 1.05rem;
-      line-height: 1.8;
-      max-height: 0;
-      transition: max-height 0.5s var(--ease), padding 0.5s var(--ease);
-    }
-    .faq-item[open] .answer { max-height: 340px; padding-bottom: 1.5rem; }
-
-    /* ============ Contact ============ */
-    .contact { background: var(--sage-tint); text-align: center; }
-    .contact h2 { font-size: clamp(2.1rem, 5vw, 3.2rem); color: var(--ink); margin-bottom: 1rem; }
-    .contact p { color: var(--ink-soft); font-weight: 300; max-width: 44ch; margin: 0 auto 2.4rem; font-size: 1.12rem; }
-    .contact-details {
-      display: flex;
-      flex-wrap: wrap;
-      justify-content: center;
-      align-items: center;
-      gap: 1rem 2.4rem;
-      margin-top: 2.4rem;
-    }
-    .contact .info {
-      display: inline-flex; align-items: center; gap: 0.6rem;
-      font-size: 1.18rem; font-weight: 500;
-      color: var(--ink); text-decoration: none;
-    }
-    .contact a.info:hover { color: var(--rose-dark); }
-    .contact .info.ltr { direction: ltr; }
-    .contact .info svg { width: 1.2em; height: 1.2em; stroke: var(--rose); fill: none; stroke-width: 1.6; stroke-linecap: round; stroke-linejoin: round; }
-
-    /* ============ Footer ============ */
-    footer {
-      text-align: center; padding: 2.6rem 0; background: var(--ink);
-      color: rgba(255,255,255,0.7); font-size: 0.92rem; font-weight: 300;
-    }
-    footer .mono-f { font-family: 'Frank Ruhl Libre', serif; color: #fff; font-weight: 500; }
-
-    /* ============ Floating WhatsApp ============ */
-    .fab {
-      position: fixed; bottom: 1.7rem; inset-inline-start: 1.7rem;
-      width: 60px; height: 60px;
-      background: var(--whatsapp); border-radius: 50%;
-      display: grid; place-items: center;
-      box-shadow: 0 12px 30px rgba(37, 211, 102, 0.42);
-      z-index: 80;
-      transition: transform 0.4s var(--ease), box-shadow 0.4s var(--ease);
-    }
-    .fab::after {
-      content: ""; position: absolute; inset: 0; border-radius: 50%;
-      border: 2px solid var(--whatsapp);
-      animation: ping 2.4s var(--ease) infinite;
-    }
-    @keyframes ping { 0% { transform: scale(1); opacity: 0.7; } 100% { transform: scale(1.7); opacity: 0; } }
-    .fab:hover { transform: scale(1.09); box-shadow: 0 16px 38px rgba(37, 211, 102, 0.5); }
-    .fab svg { width: 33px; height: 33px; fill: #fff; position: relative; z-index: 1; }
-    @media (max-width: 600px) {
-      .fab { width: 54px; height: 54px; bottom: 1.2rem; inset-inline-start: 1.2rem; }
-      .fab svg { width: 29px; height: 29px; }
-    }
-  </style>
+  <link rel="stylesheet" href="css/style.css">
 </head>
 <body>
+  <a class="skip-link" href="#order" data-t="skipToForm">Skip to order form</a>
 
-  <!-- ============ NAV ============ -->
-  <nav class="nav" id="nav">
-    <a class="brand" href="#top">
-      <span class="mono">ש</span>
-      <span class="brand-name" data-key="brand">שולי קורני</span>
-    </a>
-    <div class="nav-links">
-      <a class="navlink" href="#services" data-key="nav.services">שירותים</a>
-      <a class="navlink" href="#about" data-key="nav.about">עליי</a>
-      <a class="navlink" href="#faq" data-key="nav.faq">שאלות</a>
-      <button class="lang-toggle" id="langToggle" type="button" aria-label="Switch language">EN</button>
-      <a class="nav-cta js-wa" href="#" target="_blank" rel="noopener">
-        <svg viewBox="0 0 24 24"><path d="M.057 24l1.687-6.163a11.867 11.867 0 01-1.587-5.946C.16 5.335 5.495 0 12.05 0a11.817 11.817 0 018.413 3.488 11.824 11.824 0 013.48 8.414c-.003 6.557-5.338 11.892-11.893 11.892a11.9 11.9 0 01-5.688-1.448L.057 24zm6.597-3.807c1.676.995 3.276 1.591 5.392 1.592 5.448 0 9.886-4.434 9.889-9.885.002-5.462-4.415-9.89-9.881-9.892-5.452 0-9.887 4.434-9.889 9.884a9.86 9.86 0 001.51 5.26l-.999 3.648 3.738-.981zm11.387-5.464c-.074-.124-.272-.198-.57-.347-.297-.149-1.758-.868-2.031-.967-.272-.099-.47-.149-.669.149-.198.297-.768.967-.941 1.165-.173.198-.347.223-.644.074-.297-.149-1.255-.462-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.297-.347.446-.521.151-.172.2-.296.3-.495.099-.198.05-.372-.025-.521-.075-.148-.669-1.611-.916-2.206-.242-.579-.487-.501-.669-.51l-.57-.01c-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.263.489 1.694.626.712.226 1.36.194 1.872.118.571-.085 1.758-.719 2.006-1.413.247-.694.247-1.289.173-1.413z"/></svg>
-        <span class="nav-cta-label" data-key="nav.wa">וואטסאפ</span>
+  <!-- ===== Ice machine + ice rain (decoration only) ===== -->
+  <div id="ice-machine" class="ice-machine" aria-hidden="true">
+    <img src="assets/ice-machine.svg" alt="" width="220" height="150">
+  </div>
+  <canvas id="ice-rain" class="ice-rain" aria-hidden="true"></canvas>
+
+  <!-- ===== Header ===== -->
+  <header class="site-header">
+    <div class="wrap header-inner">
+      <a href="#top" class="logo" aria-label="Ice Drop">
+        <img src="assets/logo.svg" alt="" width="44" height="44">
+        <span class="brand" dir="ltr" lang="en">Ice Drop</span>
       </a>
-    </div>
-  </nav>
-
-  <!-- ============ HERO ============ -->
-  <header class="hero" id="top">
-    <div class="wrap hero-grid">
-      <div class="hero-text">
-        <span class="eyebrow reveal" data-key="hero.eyebrow">הורות · קשב · ריכוז</span>
-        <h1 class="reveal-text" data-key="hero.h1">מלווה הורים וילדים עם <em class="accent">ADHD</em> אל בית רגוע, ברור ומחובר</h1>
-        <p class="subtitle reveal d2" data-key="hero.subtitle">ליווי אישי ומקצועי שמחזיר את השקט הביתה — דרך הבנה עמוקה, כלים מדויקים והרבה חמלה לכל בני המשפחה.</p>
-        <div class="name reveal d3" data-key="hero.name">שולי קורני</div>
-        <div class="cta-row reveal d4">
-          <a class="btn btn-primary js-wa" href="#" target="_blank" rel="noopener">
-            <svg viewBox="0 0 24 24"><path d="M.057 24l1.687-6.163a11.867 11.867 0 01-1.587-5.946C.16 5.335 5.495 0 12.05 0a11.817 11.817 0 018.413 3.488 11.824 11.824 0 013.48 8.414c-.003 6.557-5.338 11.892-11.893 11.892a11.9 11.9 0 01-5.688-1.448L.057 24zm6.597-3.807c1.676.995 3.276 1.591 5.392 1.592 5.448 0 9.886-4.434 9.889-9.885.002-5.462-4.415-9.89-9.881-9.892-5.452 0-9.887 4.434-9.889 9.884a9.86 9.86 0 001.51 5.26l-.999 3.648 3.738-.981zm11.387-5.464c-.074-.124-.272-.198-.57-.347-.297-.149-1.758-.868-2.031-.967-.272-.099-.47-.149-.669.149-.198.297-.768.967-.941 1.165-.173.198-.347.223-.644.074-.297-.149-1.255-.462-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.297-.347.446-.521.151-.172.2-.296.3-.495.099-.198.05-.372-.025-.521-.075-.148-.669-1.611-.916-2.206-.242-.579-.487-.501-.669-.51l-.57-.01c-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.263.489 1.694.626.712.226 1.36.194 1.872.118.571-.085 1.758-.719 2.006-1.413.247-.694.247-1.289.173-1.413z"/></svg>
-            <span data-key="cta.hero">דברו איתי בוואטסאפ</span>
-          </a>
-          <span class="trust" data-key="hero.trust"><strong>+35 שנות</strong> עבודה עם ילדים ומשפחות</span>
-        </div>
+      <nav class="nav" aria-label="Main">
+        <a href="#why" data-t="navWhy">Why us</a>
+        <a href="#prices" data-t="navPrices">Prices</a>
+        <a href="#area" data-t="navArea">Area</a>
+        <a href="#order" data-t="navOrder">Order</a>
+      </nav>
+      <div class="header-actions">
+        <button type="button" id="music-btn" class="chip chip-music" aria-expanded="false" aria-controls="music-panel">
+          <span data-t="musicBtn">🎵 Ice Ice Baby</span>
+        </button>
+        <button type="button" id="lang-btn" class="chip chip-lang" lang="en" data-t-label="langToggleLabel">
+          <span data-t="langToggle">English</span>
+        </button>
       </div>
-      <div class="portrait-col reveal d2">
-        <div class="portrait" data-parallax="0.06">
-          <span class="dot"></span>
-          <span class="block"></span>
-          <div class="frame">
-            <div class="ph">
-              <span class="glyph">ש</span>
-              <small data-key="ph">התמונה שלך כאן</small>
-            </div>
-          </div>
-        </div>
+    </div>
+    <!-- Spotify player: hidden until the music button is tapped -->
+    <div id="music-panel" class="music-panel" hidden>
+      <div class="wrap music-inner">
+        <div id="music-frame-holder" class="music-frame"></div>
+        <button type="button" id="music-close" class="music-close" data-t-label="musicClose">✕</button>
       </div>
     </div>
   </header>
 
-  <!-- ============ SERVICES ============ -->
-  <section class="services" id="services">
-    <div class="wrap">
-      <div class="section-head reveal">
-        <span class="index" data-key="svc.index">01 — השירותים</span>
-        <span class="eyebrow" data-key="svc.eyebrow">איך אני מלווה אתכם</span>
-        <h2 class="reveal-text" data-key="svc.h2">ליווי שמותאם בדיוק לכם</h2>
+  <main id="top">
+    <!-- ===== Hero ===== -->
+    <section class="hero">
+      <div class="wrap hero-inner">
+        <p class="kicker" data-t="heroKicker"></p>
+        <h1 class="hero-title" data-t="heroTitle"></h1>
+        <p class="hero-sub" data-t="heroSub"></p>
+        <div class="hero-ctas">
+          <a href="#order" class="btn btn-primary btn-big" data-t="heroCta">Order ice</a>
+          <a href="#prices" class="btn btn-ghost" data-t="heroCta2">See prices</a>
+        </div>
+        <p class="hero-badge" data-t="heroBadge" data-vars="window"></p>
       </div>
-      <div class="cards">
-        <div class="card reveal d1">
-          <span class="num">01</span>
-          <div class="icon"><svg viewBox="0 0 24 24"><path d="M12 2a7 7 0 0 0-4 12.7V17a2 2 0 0 0 2 2h4a2 2 0 0 0 2-2v-2.3A7 7 0 0 0 12 2z"/><path d="M9 21h6"/></svg></div>
-          <h3 data-key="svc.1.h3">אימון ADHD לילדים ונוער</h3>
-          <p data-key="svc.1.p">ליווי ילדים ונוער בארגון, ניהול זמן, ויסות וחיזוק הביטחון העצמי — בגישה חמה ומותאמת אישית.</p>
-        </div>
-        <div class="card reveal d2">
-          <span class="num">02</span>
-          <div class="icon"><svg viewBox="0 0 24 24"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg></div>
-          <h3 data-key="svc.2.h3">אימון ADHD למבוגרים</h3>
-          <p data-key="svc.2.p">כלים מעשיים למבוגרים עם ADHD — מיקוד, סדר, ניהול משימות וקבלה עצמית מתוך חמלה.</p>
-        </div>
-        <div class="card reveal d3">
-          <span class="num">03</span>
-          <div class="icon"><svg viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg></div>
-          <h3 data-key="svc.3.h3">אימון הורים</h3>
-          <p data-key="svc.3.p">הדרכה והעצמה להורים: שגרה רגועה, גבולות מתוך אהבה ותקשורת מחברת בבית.</p>
-        </div>
-        <div class="card reveal d4">
-          <span class="num">04</span>
-          <div class="icon"><svg viewBox="0 0 24 24"><path d="M5 8h14M5 8a2 2 0 1 1 0-4h14a2 2 0 1 1 0 4M5 8v10a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8"/><path d="M9 13h6"/></svg></div>
-          <h3 data-key="svc.4.h3">ליווי בעברית ובאנגלית</h3>
-          <p data-key="svc.4.p">אנגלית היא שפת האם שלי — ואני מלווה אתכם בשפה הנוחה לכם, בעברית או באנגלית.</p>
-        </div>
-      </div>
-      <p class="price-line reveal" data-key="svc.price">כל מפגש אישי — <strong>₪300</strong> · בעברית או באנגלית</p>
-    </div>
-  </section>
 
-  <!-- ============ PROCESS ============ -->
-  <section class="process" id="process">
-    <div class="wrap">
-      <div class="section-head reveal">
-        <span class="index" data-key="proc.index">02 — איך מתחילים</span>
-        <span class="eyebrow" data-key="proc.eyebrow">הדרך שלנו יחד</span>
-        <h2 class="reveal-text" data-key="proc.h2">שלושה צעדים פשוטים</h2>
+      <!-- Skate-stop swoosh -->
+      <div class="skate" aria-hidden="true">
+        <svg class="skate-svg" viewBox="0 0 1000 120" preserveAspectRatio="none">
+          <defs>
+            <linearGradient id="swooshGrad" x1="0" x2="1">
+              <stop offset="0" stop-color="#ffffff" stop-opacity="0"/>
+              <stop offset="0.6" stop-color="#bfe9ff"/>
+              <stop offset="1" stop-color="#ffffff"/>
+            </linearGradient>
+          </defs>
+          <path class="skate-line" d="M -20 92 C 250 92, 520 70, 760 78" />
+          <path class="skate-line skate-line-2" d="M -20 102 C 260 100, 520 84, 750 88" />
+        </svg>
+        <div class="skate-cube"><img src="assets/logo.svg" alt="" width="56" height="56"></div>
+        <div class="skate-spray"></div>
       </div>
-      <div class="steps">
-        <div class="step reveal d1">
-          <div class="big">01</div>
-          <h3 data-key="proc.1.h3">שיחת היכרות</h3>
-          <p data-key="proc.1.p">שיחה חמה וללא התחייבות, שבה נכיר, תשתפו במה שמעסיק אתכם ונבין יחד איך אני יכולה לעזור.</p>
+      <div class="hero-snowbank" aria-hidden="true"></div>
+    </section>
+
+    <!-- ===== Story ===== -->
+    <section class="section story" id="story">
+      <div class="wrap">
+        <h2 class="section-title" data-t="storyTitle"></h2>
+        <ol class="story-list">
+          <li><span class="story-emoji" aria-hidden="true">☀️</span><p data-t="story1"></p></li>
+          <li><span class="story-emoji" aria-hidden="true">🧊</span><p data-t="story2"></p></li>
+          <li><span class="story-emoji" aria-hidden="true">🛒</span><p data-t="story3"></p></li>
+          <li><span class="story-emoji" aria-hidden="true">🚪</span><p data-t="story4"></p></li>
+        </ol>
+      </div>
+    </section>
+
+    <!-- ===== Why us ===== -->
+    <section class="section why" id="why">
+      <div class="wrap">
+        <h2 class="section-title" data-t="whyTitle"></h2>
+        <div class="why-grid">
+          <article class="why-card">
+            <svg class="why-icon" viewBox="0 0 96 96" aria-hidden="true">
+              <defs>
+                <linearGradient id="fridge" x1="0" x2="1"><stop offset="0" stop-color="#ffffff"/><stop offset="1" stop-color="#cdeeff"/></linearGradient>
+                <linearGradient id="cubeG" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#ffffff"/><stop offset="1" stop-color="#7fcfff"/></linearGradient>
+              </defs>
+              <rect x="22" y="8" width="52" height="80" rx="10" fill="url(#fridge)" stroke="#2a8fd8" stroke-width="3"/>
+              <line x1="22" y1="38" x2="74" y2="38" stroke="#2a8fd8" stroke-width="3"/>
+              <rect x="64" y="16" width="4" height="14" rx="2" fill="#2a8fd8"/>
+              <rect x="64" y="46" width="4" height="18" rx="2" fill="#2a8fd8"/>
+              <g transform="rotate(-14 52 66)">
+                <rect x="40" y="54" width="26" height="26" rx="6" fill="url(#cubeG)" stroke="#2a8fd8" stroke-width="2.5"/>
+                <path d="M45 60 L54 58" stroke="#fff" stroke-width="3" stroke-linecap="round"/>
+              </g>
+              <circle cx="80" cy="20" r="12" fill="#ff6fa8"/>
+              <path d="M75 20 l4 4 l7 -8" stroke="#fff" stroke-width="3" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+            <h3 data-t="why1Title"></h3>
+            <p data-t="why1Text"></p>
+          </article>
+          <article class="why-card">
+            <svg class="why-icon" viewBox="0 0 96 96" aria-hidden="true">
+              <defs>
+                <linearGradient id="bagG" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#ffd6e7"/><stop offset="1" stop-color="#ff8fbf"/></linearGradient>
+              </defs>
+              <path d="M24 34 h48 l-5 50 h-38 z" fill="url(#bagG)" stroke="#d6457f" stroke-width="3" stroke-linejoin="round"/>
+              <path d="M36 34 v-8 a12 12 0 0 1 24 0 v8" fill="none" stroke="#d6457f" stroke-width="3"/>
+              <path d="M30 46 l4 30" stroke="#fff" stroke-width="3" stroke-linecap="round" opacity="0.8"/>
+              <circle cx="48" cy="56" r="34" fill="none" stroke="#1e88e5" stroke-width="6"/>
+              <line x1="24" y1="80" x2="72" y2="32" stroke="#1e88e5" stroke-width="6" stroke-linecap="round"/>
+            </svg>
+            <h3 data-t="why2Title"></h3>
+            <p data-t="why2Text"></p>
+          </article>
+          <article class="why-card">
+            <svg class="why-icon" viewBox="0 0 96 96" aria-hidden="true">
+              <defs>
+                <linearGradient id="doorG" x1="0" x2="1"><stop offset="0" stop-color="#5cc0ff"/><stop offset="1" stop-color="#1e88e5"/></linearGradient>
+                <linearGradient id="iceBag" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#ffffff"/><stop offset="1" stop-color="#bfe9ff"/></linearGradient>
+              </defs>
+              <rect x="14" y="8" width="44" height="80" rx="6" fill="url(#doorG)" stroke="#0d47a1" stroke-width="3"/>
+              <circle cx="50" cy="50" r="3.5" fill="#fff59d"/>
+              <rect x="22" y="16" width="28" height="22" rx="4" fill="#bfe9ff" opacity="0.6"/>
+              <path d="M54 50 q14 -6 28 0 l-3 36 h-22 z" fill="url(#iceBag)" stroke="#2a8fd8" stroke-width="3" stroke-linejoin="round"/>
+              <rect x="60" y="60" width="9" height="9" rx="2" fill="#9edcff"/>
+              <rect x="70" y="68" width="9" height="9" rx="2" fill="#9edcff"/>
+              <rect x="61" y="73" width="8" height="8" rx="2" fill="#9edcff"/>
+              <path d="M84 30 l2 6 l6 2 l-6 2 l-2 6 l-2 -6 l-6 -2 l6 -2 z" fill="#fff" stroke="#5cc0ff" stroke-width="1.5"/>
+            </svg>
+            <h3 data-t="why3Title"></h3>
+            <p data-t="why3Text"></p>
+          </article>
         </div>
-        <div class="step reveal d2">
-          <div class="big">02</div>
-          <h3 data-key="proc.2.h3">בניית תוכנית</h3>
-          <p data-key="proc.2.p">נתאים תוכנית ליווי אישית למשפחה — מטרות ברורות, כלים מעשיים וקצב שמתאים בדיוק לכם.</p>
+      </div>
+    </section>
+
+    <!-- ===== Prices ===== -->
+    <section class="section prices" id="prices">
+      <div class="wrap">
+        <h2 class="section-title" data-t="pricesTitle"></h2>
+        <p class="section-sub" data-t="pricesSub"></p>
+        <!-- Product cards are built automatically from js/config.js -->
+        <div id="price-cards" class="price-grid"></div>
+
+        <div class="info-grid">
+          <div class="info-card">
+            <h3 data-t="deliveryInfoTitle"></h3>
+            <p data-t="deliveryInfoDay" data-vars="window"></p>
+            <p data-t="deliveryInfoCutoff"></p>
+            <p class="next-date" data-t="deliveryInfoNext" data-vars="date"></p>
+          </div>
+          <div class="info-card">
+            <h3 data-t="weeklyInfoTitle"></h3>
+            <p data-t="weeklyInfoText"></p>
+            <a class="btn btn-wa js-pause-link" target="_blank" rel="noopener" data-t="pauseBtn" href="#"></a>
+          </div>
         </div>
-        <div class="step reveal d3">
-          <div class="big">03</div>
-          <h3 data-key="proc.3.h3">ליווי וצמיחה</h3>
-          <p data-key="proc.3.p">מפגשים קבועים, תמיכה לאורך הדרך והתאמות שוטפות — עד שהשקט והביטחון הופכים לשגרה.</p>
+      </div>
+    </section>
+
+    <!-- ===== Delivery area ===== -->
+    <section class="section area" id="area">
+      <div class="wrap">
+        <h2 class="section-title" data-t="areaTitle"></h2>
+        <p class="section-sub" data-t="areaSub"></p>
+        <div id="map" class="map" role="img" data-t-label="mapLabel"></div>
+        <p class="area-note" data-t="areaNote"></p>
+      </div>
+    </section>
+
+    <!-- ===== Order form ===== -->
+    <section class="section order" id="order">
+      <div class="wrap wrap-narrow">
+        <div id="order-form-wrap">
+          <h2 class="section-title" data-t="orderTitle"></h2>
+          <p class="section-sub" data-t="orderSub"></p>
+
+          <div class="delivery-banner">
+            <p class="cutoff" data-t="cutoffBanner"></p>
+            <p class="your-delivery" data-t="yourDelivery" data-vars="date,window"></p>
+          </div>
+
+          <form id="order-form" novalidate>
+            <p id="form-error" class="form-error" role="alert" hidden></p>
+
+            <!-- Honeypot: hidden from people, bots fill it in -->
+            <div class="hp" aria-hidden="true">
+              <label>Leave empty <input type="text" name="website" tabindex="-1" autocomplete="off"></label>
+            </div>
+
+            <fieldset class="card-fs">
+              <legend data-t="fsYou"></legend>
+              <div class="field">
+                <label for="f-name"><span data-t="fName"></span> *</label>
+                <input id="f-name" name="name" type="text" autocomplete="name" required maxlength="80" data-ph="fNamePh">
+                <p class="err" id="err-name"></p>
+              </div>
+              <div class="field">
+                <label for="f-phone"><span data-t="fPhone"></span> *</label>
+                <input id="f-phone" name="phone" type="tel" inputmode="tel" autocomplete="tel" required maxlength="20" dir="ltr" data-ph="fPhonePh">
+                <p class="err" id="err-phone"></p>
+              </div>
+            </fieldset>
+
+            <fieldset class="card-fs">
+              <legend data-t="fsAddress"></legend>
+              <div class="field">
+                <label for="f-street"><span data-t="fStreet"></span> *</label>
+                <input id="f-street" name="street" type="text" autocomplete="street-address" required maxlength="120" data-ph="fStreetPh">
+                <p class="err" id="err-street"></p>
+              </div>
+              <div class="field-row">
+                <div class="field">
+                  <label for="f-apt"><span data-t="fApt"></span> <small data-t="optional"></small></label>
+                  <input id="f-apt" name="apt" type="text" maxlength="10" inputmode="numeric">
+                </div>
+                <div class="field">
+                  <label for="f-floor"><span data-t="fFloor"></span> <small data-t="optional"></small></label>
+                  <input id="f-floor" name="floor" type="text" maxlength="10" inputmode="numeric">
+                </div>
+                <div class="field">
+                  <label for="f-code"><span data-t="fCode"></span> <small data-t="optional"></small></label>
+                  <input id="f-code" name="code" type="text" maxlength="20" dir="ltr" data-ph="fCodePh">
+                </div>
+              </div>
+              <div class="field">
+                <label for="f-notes"><span data-t="fNotes"></span> <small data-t="optional"></small></label>
+                <textarea id="f-notes" name="notes" rows="2" maxlength="400" data-ph="fNotesPh"></textarea>
+              </div>
+            </fieldset>
+
+            <fieldset class="card-fs">
+              <legend data-t="fsIce"></legend>
+              <div class="field" role="radiogroup" aria-labelledby="lbl-size">
+                <p class="label" id="lbl-size"><span data-t="fSize"></span> *</p>
+                <!-- Size choices are built automatically from js/config.js -->
+                <div id="size-options" class="choice-grid"></div>
+                <p class="err" id="err-size"></p>
+              </div>
+
+              <div class="field">
+                <label for="f-qty"><span data-t="fQty"></span> *</label>
+                <div class="qty">
+                  <button type="button" class="qty-btn" id="qty-minus" data-t-label="qtyMinus">−</button>
+                  <input id="f-qty" name="qty" type="number" inputmode="numeric" min="1" step="1" value="1" required dir="ltr">
+                  <button type="button" class="qty-btn" id="qty-plus" data-t-label="qtyPlus">+</button>
+                </div>
+                <p class="err" id="err-qty"></p>
+              </div>
+
+              <div class="field" role="radiogroup" aria-labelledby="lbl-type">
+                <p class="label" id="lbl-type"><span data-t="fType"></span> *</p>
+                <div class="choice-grid">
+                  <label class="choice">
+                    <input type="radio" name="orderType" value="once" checked>
+                    <span class="choice-body"><b data-t="typeOnce"></b><small data-t="typeOnceSub"></small></span>
+                  </label>
+                  <label class="choice">
+                    <input type="radio" name="orderType" value="weekly">
+                    <span class="choice-body"><b data-t="typeWeekly"></b><small data-t="typeWeeklySub"></small></span>
+                  </label>
+                </div>
+              </div>
+            </fieldset>
+
+            <fieldset class="card-fs">
+              <legend data-t="fsPay"></legend>
+              <div class="field" role="radiogroup" aria-labelledby="lbl-pay">
+                <p class="label sr-only" id="lbl-pay" data-t="fsPay"></p>
+                <div class="choice-grid">
+                  <label class="choice">
+                    <input type="radio" name="payment" value="bit">
+                    <span class="choice-body"><b>📱 <span data-t="payBit"></span></b><small data-t="payBitSub"></small></span>
+                  </label>
+                  <label class="choice">
+                    <input type="radio" name="payment" value="cash">
+                    <span class="choice-body"><b>💵 <span data-t="payCash"></span></b><small data-t="payCashSub"></small></span>
+                  </label>
+                </div>
+                <p class="err" id="err-payment"></p>
+              </div>
+
+              <div id="bit-box" class="pay-box" hidden>
+                <h4 data-t="bitBoxTitle"></h4>
+                <p data-t="bitBoxText"></p>
+                <div class="bit-number">
+                  <span class="bit-num js-bit-number" dir="ltr"></span>
+                  <button type="button" class="btn btn-small js-copy-bit" data-t="bitCopy"></button>
+                </div>
+                <a class="btn btn-bit js-bit-pay" href="#" target="_blank" rel="noopener" data-t="bitPayBtn"></a>
+                <p class="bit-toast" role="status" aria-live="polite"></p>
+              </div>
+              <div id="cash-box" class="pay-box" hidden>
+                <p data-t="cashBoxText"></p>
+              </div>
+            </fieldset>
+
+            <p class="reminder" data-t="homeReminder" data-vars="window"></p>
+
+            <div class="total" aria-live="polite">
+              <div>
+                <span class="total-label" data-t="totalLabel"></span>
+                <small id="total-calc" class="total-calc"></small>
+              </div>
+              <div class="total-amount"><span id="total-amount" dir="ltr"></span> <small id="total-weekly"></small></div>
+            </div>
+
+            <button type="submit" class="btn btn-primary btn-big btn-block" id="submit-btn" data-t="submit"></button>
+          </form>
+        </div>
+
+        <!-- ===== Thank-you screen (shown after submitting) ===== -->
+        <div id="thanks" class="thanks" hidden tabindex="-1">
+          <img class="thanks-logo" src="assets/logo.svg" alt="" width="96" height="96">
+          <h2 class="section-title" data-t="thanksTitle"></h2>
+          <p class="thanks-text" data-t="thanksText"></p>
+
+          <div class="summary">
+            <h3 data-t="thanksSummary"></h3>
+            <dl id="summary-list"></dl>
+          </div>
+
+          <p class="reminder" data-t="homeReminder" data-vars="window"></p>
+
+          <a id="wa-order-btn" class="btn btn-wa btn-big btn-block" target="_blank" rel="noopener" href="#" data-t="waOrderBtn"></a>
+          <p class="hint" data-t="waOrderHint"></p>
+
+          <a id="thanks-pause" class="btn btn-wa-ghost btn-block js-pause-link" target="_blank" rel="noopener" href="#" data-t="pauseBtn" hidden></a>
+
+          <button type="button" id="new-order" class="btn btn-ghost" data-t="newOrder"></button>
         </div>
       </div>
-    </div>
-  </section>
+    </section>
+  </main>
 
-  <!-- ============ ABOUT ============ -->
-  <section class="about" id="about">
-    <div class="wrap about-grid">
-      <div class="about-photo reveal">
-        <div class="ph"><span class="glyph">ש</span><small data-key="ph">התמונה שלך כאן</small></div>
+  <footer class="site-footer">
+    <div class="wrap footer-inner">
+      <div class="logo logo-footer">
+        <img src="assets/logo.svg" alt="" width="40" height="40">
+        <span class="brand" dir="ltr" lang="en">Ice Drop</span>
       </div>
-      <div class="about-text reveal d2">
-        <span class="index" data-key="about.index">03 — קצת עליי</span>
-        <h2 class="reveal-text" data-key="about.h2">נעים מאוד, אני שולי קורני</h2>
-        <p data-key="about.p1">אני שולי קורני, מאמנת ADHD ומאמנת הורים מוסמכת מטעם אוניברסיטת בר-אילן (2024–2025). אנגלית היא שפת האם שלי, ואני מלווה משפחות בעברית ובאנגלית כאחת.</p>
-        <p data-key="about.p2">עם יותר מ-35 שנות עבודה עם ילדים ומשפחות, ואם לשבעה וסבתא לתשעה, אני מביאה איתי ניסיון חיים עשיר, חמלה אמיתית וכלים מקצועיים. אני גרה ברעננה ומלווה הורים, ילדים ומבוגרים בדרך לבית רגוע, ברור ומחובר יותר.</p>
-        <p class="signature" data-key="about.sig">באהבה, שולי קורני</p>
-      </div>
+      <p data-t="footerTag"></p>
+      <a class="btn btn-wa js-wa-contact" target="_blank" rel="noopener" href="#">
+        💬 <span data-t="footerContact"></span> · <span class="js-wa-number" dir="ltr"></span>
+      </a>
+      <p class="footer-small" data-t="footerMade"></p>
+      <p class="footer-small">© <span id="year"></span> <span dir="ltr" lang="en">Ice Drop</span></p>
     </div>
-  </section>
-
-  <!-- ============ TESTIMONIALS ============ -->
-  <section class="testimonials" id="testimonials">
-    <div class="wrap">
-      <div class="section-head center reveal">
-        <span class="index" data-key="test.index">04 — המלצות</span>
-        <span class="eyebrow" data-key="test.eyebrow">לקוחות ממליצים</span>
-        <h2 class="reveal-text" data-key="test.h2">מה הורים מספרים</h2>
-      </div>
-      <div class="quote reveal d1">
-        <span class="mark">”</span>
-        <div class="stars">★★★★★</div>
-        <div class="qtext" data-key="test.1.p">
-          <p>בעקבות אבחון שאישר שהבת שלנו (בת 10) בעלת ADHD, קיבלנו המלצה מבית הספר לעבור סדרת מפגשים עם שולי. הסדרה כללה שני מפגשי הדרכת הורים, שני מפגשים פרטניים עם בתנו ושני מפגשים משותפים של ארבעתנו: שולי, בתנו ואנחנו.</p>
-          <p>המפגשים שלנו כזוג עם שולי הדגישו את הקשיים שאיתם אנו מתמודדים ונתנו להם מקום. שולי הייתה מלאת הצעות, ובעצם גרמה לנו להתכנס לתהליך משפחתי חיובי ומחזק.</p>
-          <p>בשני המפגשים הפרטניים עם בתנו נוצר חיבור מיידי בינה לבין שולי, איתה היא חלקה את הקשיים שלה וקיבלה כלים רבים להתמודדות בכיתה ובחיים עצמם עם הקשיים שאיתם היא מתמודדת.</p>
-          <p>במפגשים המשותפים שלנו עם בתנו ושולי קיבלנו הצצה נדירה לתהליך העבודה המרתק של שולי עם בתנו, והתמודדנו עם אמיתות שהיה חשוב לנו לראות. בנוסף, בהמלצתה של שולי התקדמנו לאבחון נוסף, ואנחנו כל כך מודים לה על זווית הראייה המקצועית והכנה.</p>
-        </div>
-        <span class="who" data-key="test.1.who">— הורים לילדה בת 10</span>
-      </div>
-    </div>
-  </section>
-
-  <!-- ============ CLOSING ============ -->
-  <section class="closing">
-    <div class="wrap reveal">
-      <p data-key="closing">הצעד הראשון לבית רגוע יותר מתחיל ב<em>שיחה אחת</em> קטנה.</p>
-    </div>
-  </section>
-
-  <!-- ============ FAQ ============ -->
-  <section class="faq" id="faq">
-    <div class="wrap">
-      <div class="section-head center reveal">
-        <span class="index" data-key="faq.index">05 — שאלות נפוצות</span>
-        <span class="eyebrow" data-key="faq.eyebrow">כל מה שרציתם לדעת</span>
-        <h2 class="reveal-text" data-key="faq.h2">שאלות ותשובות</h2>
-      </div>
-      <div class="faq-list reveal d1">
-        <details class="faq-item">
-          <summary><span data-key="faq.1.q">למי הליווי מתאים?</span> <span class="plus"></span></summary>
-          <div class="answer" data-key="faq.1.a">הליווי מתאים להורים לילדים ולנוער עם ADHD, וגם למבוגרים המתמודדים בעצמם. בין אם קיבלתם אבחון ובין אם רק מרגישים שמשהו לא זורם — מקומכם כאן.</div>
-        </details>
-        <details class="faq-item">
-          <summary><span data-key="faq.2.q">כמה עולה מפגש?</span> <span class="plus"></span></summary>
-          <div class="answer" data-key="faq.2.a">כל מפגש אישי הוא ₪300, בעברית או באנגלית. בשיחת ההיכרות נבנה יחד תוכנית שמתאימה לצרכים ולקצב שלכם — בלי התחייבות ארוכת טווח מראש.</div>
-        </details>
-        <details class="faq-item">
-          <summary><span data-key="faq.3.q">אפשר ליווי באנגלית?</span> <span class="plus"></span></summary>
-          <div class="answer" data-key="faq.3.a">בהחלט. אנגלית היא שפת האם שלי, ואני מלווה באופן טבעי בעברית ובאנגלית כאחת — בשפה שנוחה לכם ולמשפחה.</div>
-        </details>
-        <details class="faq-item">
-          <summary><span data-key="faq.4.q">איך מתחילים?</span> <span class="plus"></span></summary>
-          <div class="answer" data-key="faq.4.a">פשוט מאוד — שולחים לי הודעה בוואטסאפ, ואנחנו קובעים שיחת היכרות קצרה. משם נמשיך יחד בקצב שלכם.</div>
-        </details>
-      </div>
-    </div>
-  </section>
-
-  <!-- ============ CONTACT ============ -->
-  <section class="contact" id="contact">
-    <div class="wrap reveal">
-      <h2 class="reveal-text" data-key="contact.h2">בואו נתחיל את הדרך יחד</h2>
-      <p data-key="contact.p">מוזמנים לשלוח לי הודעה קצרה בוואטסאפ — אשמח להכיר, להקשיב ולחשוב יחד איך אני יכולה לעזור.</p>
-      <div>
-        <a class="btn btn-primary js-wa" href="#" target="_blank" rel="noopener">
-          <svg viewBox="0 0 24 24"><path d="M.057 24l1.687-6.163a11.867 11.867 0 01-1.587-5.946C.16 5.335 5.495 0 12.05 0a11.817 11.817 0 018.413 3.488 11.824 11.824 0 013.48 8.414c-.003 6.557-5.338 11.892-11.893 11.892a11.9 11.9 0 01-5.688-1.448L.057 24zm6.597-3.807c1.676.995 3.276 1.591 5.392 1.592 5.448 0 9.886-4.434 9.889-9.885.002-5.462-4.415-9.89-9.881-9.892-5.452 0-9.887 4.434-9.889 9.884a9.86 9.86 0 001.51 5.26l-.999 3.648 3.738-.981zm11.387-5.464c-.074-.124-.272-.198-.57-.347-.297-.149-1.758-.868-2.031-.967-.272-.099-.47-.149-.669.149-.198.297-.768.967-.941 1.165-.173.198-.347.223-.644.074-.297-.149-1.255-.462-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.297-.347.446-.521.151-.172.2-.296.3-.495.099-.198.05-.372-.025-.521-.075-.148-.669-1.611-.916-2.206-.242-.579-.487-.501-.669-.51l-.57-.01c-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.263.489 1.694.626.712.226 1.36.194 1.872.118.571-.085 1.758-.719 2.006-1.413.247-.694.247-1.289.173-1.413z"/></svg>
-          <span data-key="cta.contact">שליחת הודעה בוואטסאפ</span>
-        </a>
-      </div>
-      <div class="contact-details">
-        <a class="info ltr" href="tel:+972546487774" aria-label="Phone">
-          <svg viewBox="0 0 24 24"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
-          <span>054-6487774</span>
-        </a>
-        <a class="info ltr" href="mailto:Shulicorney@gmail.com" aria-label="Email">
-          <svg viewBox="0 0 24 24"><path d="M4 4h16a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2z"/><path d="m22 6-10 7L2 6"/></svg>
-          <span>Shulicorney@gmail.com</span>
-        </a>
-        <span class="info">
-          <svg viewBox="0 0 24 24"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
-          <span data-key="contact.loc">רעננה, ישראל</span>
-        </span>
-      </div>
-    </div>
-  </section>
-
-  <footer>
-    <p data-key="footer"><span class="mono-f">שולי קורני</span> · מאמנת הורים ו-ADHD · רעננה</p>
   </footer>
 
-  <a class="fab js-wa" href="#" target="_blank" rel="noopener" aria-label="WhatsApp">
-    <svg viewBox="0 0 24 24"><path d="M.057 24l1.687-6.163a11.867 11.867 0 01-1.587-5.946C.16 5.335 5.495 0 12.05 0a11.817 11.817 0 018.413 3.488 11.824 11.824 0 013.48 8.414c-.003 6.557-5.338 11.892-11.893 11.892a11.9 11.9 0 01-5.688-1.448L.057 24zm6.597-3.807c1.676.995 3.276 1.591 5.392 1.592 5.448 0 9.886-4.434 9.889-9.885.002-5.462-4.415-9.89-9.881-9.892-5.452 0-9.887 4.434-9.889 9.884a9.86 9.86 0 001.51 5.26l-.999 3.648 3.738-.981zm11.387-5.464c-.074-.124-.272-.198-.57-.347-.297-.149-1.758-.868-2.031-.967-.272-.099-.47-.149-.669.149-.198.297-.768.967-.941 1.165-.173.198-.347.223-.644.074-.297-.149-1.255-.462-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.297-.347.446-.521.151-.172.2-.296.3-.495.099-.198.05-.372-.025-.521-.075-.148-.669-1.611-.916-2.206-.242-.579-.487-.501-.669-.51l-.57-.01c-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.263.489 1.694.626.712.226 1.36.194 1.872.118.571-.085 1.758-.719 2.006-1.413.247-.694.247-1.289.173-1.413z"/></svg>
-  </a>
-
-  <script>
-    (function () {
-      // ---------- WhatsApp message ----------
-      var MSG = {
-        he: 'שלום שולי, הגעתי מהאתר שלך ואשמח לשמוע עוד',
-        en: 'Hi Shuli, I came from your website and would love to hear more'
-      };
-      var WA = {
-        he: 'https://wa.me/972546487774?text=' + encodeURIComponent(MSG.he),
-        en: 'https://wa.me/972546487774?text=' + encodeURIComponent(MSG.en)
-      };
-
-      // ---------- Translation dictionary ----------
-      var T = {
-        'brand':        { he: 'שולי קורני', en: 'Shuli Corney' },
-        'nav.services': { he: 'שירותים', en: 'Services' },
-        'nav.about':    { he: 'עליי', en: 'About' },
-        'nav.faq':      { he: 'שאלות', en: 'FAQ' },
-        'nav.wa':       { he: 'וואטסאפ', en: 'WhatsApp' },
-
-        'hero.eyebrow':  { he: 'הורות · קשב · ריכוז', en: 'Parenting · Focus · ADHD' },
-        'hero.h1':       { he: 'מלווה הורים וילדים עם <em class="accent">ADHD</em> אל בית רגוע, ברור ומחובר',
-                           en: 'Guiding parents and children with <em class="accent">ADHD</em> toward a calm, clear and connected home' },
-        'hero.subtitle': { he: 'ליווי אישי ומקצועי שמחזיר את השקט הביתה — דרך הבנה עמוקה, כלים מדויקים והרבה חמלה לכל בני המשפחה.',
-                           en: 'Personal, professional guidance that brings the calm back home — through deep understanding, precise tools and plenty of compassion for the whole family.' },
-        'hero.name':     { he: 'שולי קורני', en: 'Shuli Corney' },
-        'cta.hero':      { he: 'דברו איתי בוואטסאפ', en: 'Message me on WhatsApp' },
-        'hero.trust':    { he: '<strong>+35 שנות</strong> עבודה עם ילדים ומשפחות', en: '<strong>35+ years</strong> with children and families' },
-        'ph':            { he: 'התמונה שלך כאן', en: 'Your photo here' },
-
-        'svc.index':   { he: '01 — השירותים', en: '01 — Services' },
-        'svc.eyebrow': { he: 'איך אני מלווה אתכם', en: 'How I support you' },
-        'svc.h2':      { he: 'ליווי שמותאם בדיוק לכם', en: 'Support tailored exactly to you' },
-        'svc.1.h3': { he: 'אימון ADHD לילדים ונוער', en: 'ADHD Coaching for Kids & Teens' },
-        'svc.1.p':  { he: 'ליווי ילדים ונוער בארגון, ניהול זמן, ויסות וחיזוק הביטחון העצמי — בגישה חמה ומותאמת אישית.',
-                      en: 'Guiding children and teens with organization, time management, regulation and building self-confidence — with a warm, personalized approach.' },
-        'svc.2.h3': { he: 'אימון ADHD למבוגרים', en: 'ADHD Coaching for Adults' },
-        'svc.2.p':  { he: 'כלים מעשיים למבוגרים עם ADHD — מיקוד, סדר, ניהול משימות וקבלה עצמית מתוך חמלה.',
-                      en: 'Practical tools for adults with ADHD — focus, order, task management and self-acceptance with compassion.' },
-        'svc.3.h3': { he: 'אימון הורים', en: 'Parenting Coaching' },
-        'svc.3.p':  { he: 'הדרכה והעצמה להורים: שגרה רגועה, גבולות מתוך אהבה ותקשורת מחברת בבית.',
-                      en: 'Guidance and empowerment for parents: a calm routine, loving boundaries and connecting communication at home.' },
-        'svc.4.h3': { he: 'ליווי בעברית ובאנגלית', en: 'Coaching in Hebrew & English' },
-        'svc.4.p':  { he: 'אנגלית היא שפת האם שלי — ואני מלווה אתכם בשפה הנוחה לכם, בעברית או באנגלית.',
-                      en: 'English is my mother tongue — I will coach you in whichever language feels right, Hebrew or English.' },
-        'svc.price': { he: 'כל מפגש אישי — <strong>₪300</strong> · בעברית או באנגלית',
-                       en: 'Each private session — <strong>₪300</strong> · in Hebrew or English' },
-
-        'proc.index':   { he: '02 — איך מתחילים', en: '02 — Getting started' },
-        'proc.eyebrow': { he: 'הדרך שלנו יחד', en: 'Our journey together' },
-        'proc.h2':      { he: 'שלושה צעדים פשוטים', en: 'Three simple steps' },
-        'proc.1.h3': { he: 'שיחת היכרות', en: 'Intro call' },
-        'proc.1.p':  { he: 'שיחה חמה וללא התחייבות, שבה נכיר, תשתפו במה שמעסיק אתכם ונבין יחד איך אני יכולה לעזור.',
-                       en: 'A warm, no-commitment call where we get to know each other, you share what is on your mind, and we figure out together how I can help.' },
-        'proc.2.h3': { he: 'בניית תוכנית', en: 'Building a plan' },
-        'proc.2.p':  { he: 'נתאים תוכנית ליווי אישית למשפחה — מטרות ברורות, כלים מעשיים וקצב שמתאים בדיוק לכם.',
-                       en: 'We will shape a personal guidance plan for your family — clear goals, practical tools and a pace that fits you exactly.' },
-        'proc.3.h3': { he: 'ליווי וצמיחה', en: 'Guidance & growth' },
-        'proc.3.p':  { he: 'מפגשים קבועים, תמיכה לאורך הדרך והתאמות שוטפות — עד שהשקט והביטחון הופכים לשגרה.',
-                       en: 'Regular sessions, ongoing support and continual adjustments — until calm and confidence become your everyday.' },
-
-        'about.index': { he: '03 — קצת עליי', en: '03 — About me' },
-        'about.h2':    { he: 'נעים מאוד, אני שולי קורני', en: "Nice to meet you, I'm Shuli Corney" },
-        'about.p1':    { he: 'אני שולי קורני, מאמנת ADHD ומאמנת הורים מוסמכת מטעם אוניברסיטת בר-אילן (2024–2025). אנגלית היא שפת האם שלי, ואני מלווה משפחות בעברית ובאנגלית כאחת.',
-                         en: "I'm Shuli Corney, a certified ADHD coach and parenting coach from Bar-Ilan University (2024–2025). English is my mother tongue, and I coach families in both Hebrew and English." },
-        'about.p2':    { he: 'עם יותר מ-35 שנות עבודה עם ילדים ומשפחות, ואם לשבעה וסבתא לתשעה, אני מביאה איתי ניסיון חיים עשיר, חמלה אמיתית וכלים מקצועיים. אני גרה ברעננה ומלווה הורים, ילדים ומבוגרים בדרך לבית רגוע, ברור ומחובר יותר.',
-                         en: 'With over 35 years of working with children and families, and as a mother of seven and grandmother of nine, I bring rich life experience, genuine compassion and professional tools. I am based in Ra\'anana and guide parents, children and adults toward a calmer, clearer and more connected home.' },
-        'about.sig':   { he: 'באהבה, שולי קורני', en: 'With love, Shuli Corney' },
-
-        'test.index':   { he: '04 — המלצות', en: '04 — Testimonials' },
-        'test.eyebrow': { he: 'לקוחות ממליצים', en: 'Clients recommend' },
-        'test.h2':      { he: 'מה הורים מספרים', en: 'What parents say' },
-        'test.1.p':  { he: '<p>בעקבות אבחון שאישר שהבת שלנו (בת 10) בעלת ADHD, קיבלנו המלצה מבית הספר לעבור סדרת מפגשים עם שולי. הסדרה כללה שני מפגשי הדרכת הורים, שני מפגשים פרטניים עם בתנו ושני מפגשים משותפים של ארבעתנו: שולי, בתנו ואנחנו.</p><p>המפגשים שלנו כזוג עם שולי הדגישו את הקשיים שאיתם אנו מתמודדים ונתנו להם מקום. שולי הייתה מלאת הצעות, ובעצם גרמה לנו להתכנס לתהליך משפחתי חיובי ומחזק.</p><p>בשני המפגשים הפרטניים עם בתנו נוצר חיבור מיידי בינה לבין שולי, איתה היא חלקה את הקשיים שלה וקיבלה כלים רבים להתמודדות בכיתה ובחיים עצמם עם הקשיים שאיתם היא מתמודדת.</p><p>במפגשים המשותפים שלנו עם בתנו ושולי קיבלנו הצצה נדירה לתהליך העבודה המרתק של שולי עם בתנו, והתמודדנו עם אמיתות שהיה חשוב לנו לראות. בנוסף, בהמלצתה של שולי התקדמנו לאבחון נוסף, ואנחנו כל כך מודים לה על זווית הראייה המקצועית והכנה.</p>',
-                       en: '<p>After a diagnosis confirmed that our daughter (age 10) has ADHD, the school recommended a series of sessions with Shuli. The series included two parent-guidance sessions, two one-on-one sessions with our daughter, and two joint sessions for all four of us: Shuli, our daughter and us.</p><p>Our sessions as a couple with Shuli highlighted the challenges we face and gave them space. Shuli was full of suggestions and truly drew us together into a positive, strengthening family process.</p><p>In the two one-on-one sessions with our daughter, an immediate connection formed between her and Shuli, with whom she shared her difficulties and received many tools for coping in the classroom and in life with the challenges she faces.</p><p>In our joint sessions with our daughter and Shuli, we got a rare glimpse into Shuli\'s fascinating work with our daughter, and confronted truths that were important for us to see. In addition, at Shuli\'s recommendation we moved on to a further evaluation, and we are so grateful to her for her professional and honest perspective.</p>' },
-        'test.1.who': { he: '— הורים לילדה בת 10', en: '— Parents of a 10-year-old girl' },
-
-        'closing': { he: 'הצעד הראשון לבית רגוע יותר מתחיל ב<em>שיחה אחת</em> קטנה.',
-                     en: 'The first step to a calmer home begins with <em>one small</em> conversation.' },
-
-        'faq.index':   { he: '05 — שאלות נפוצות', en: '05 — FAQ' },
-        'faq.eyebrow': { he: 'כל מה שרציתם לדעת', en: 'Everything you wanted to know' },
-        'faq.h2':      { he: 'שאלות ותשובות', en: 'Questions & answers' },
-        'faq.1.q': { he: 'למי הליווי מתאים?', en: 'Who is the guidance for?' },
-        'faq.1.a': { he: 'הליווי מתאים להורים לילדים ולנוער עם ADHD, וגם למבוגרים המתמודדים בעצמם. בין אם קיבלתם אבחון ובין אם רק מרגישים שמשהו לא זורם — מקומכם כאן.',
-                     en: 'The guidance is for parents of children and teens with ADHD, and for adults navigating it themselves. Whether you have a diagnosis or simply feel something is not flowing — you belong here.' },
-        'faq.2.q': { he: 'כמה עולה מפגש?', en: 'How much is a session?' },
-        'faq.2.a': { he: 'כל מפגש אישי הוא ₪300, בעברית או באנגלית. בשיחת ההיכרות נבנה יחד תוכנית שמתאימה לצרכים ולקצב שלכם — בלי התחייבות ארוכת טווח מראש.',
-                     en: 'Each private session is ₪300, in Hebrew or English. In the intro call we will build a plan that fits your needs and pace — with no long-term commitment up front.' },
-        'faq.3.q': { he: 'אפשר ליווי באנגלית?', en: 'Can sessions be in English?' },
-        'faq.3.a': { he: 'בהחלט. אנגלית היא שפת האם שלי, ואני מלווה באופן טבעי בעברית ובאנגלית כאחת — בשפה שנוחה לכם ולמשפחה.',
-                     en: 'Absolutely. English is my mother tongue, and I coach naturally in both Hebrew and English — in whichever language is comfortable for you and your family.' },
-        'faq.4.q': { he: 'איך מתחילים?', en: 'How do we start?' },
-        'faq.4.a': { he: 'פשוט מאוד — שולחים לי הודעה בוואטסאפ, ואנחנו קובעים שיחת היכרות קצרה. משם נמשיך יחד בקצב שלכם.',
-                     en: 'It is simple — send me a WhatsApp message and we will set up a short intro call. From there we continue together at your pace.' },
-
-        'contact.h2':  { he: 'בואו נתחיל את הדרך יחד', en: "Let's begin the journey together" },
-        'contact.p':   { he: 'מוזמנים לשלוח לי הודעה קצרה בוואטסאפ — אשמח להכיר, להקשיב ולחשוב יחד איך אני יכולה לעזור.',
-                         en: 'Feel free to send me a short WhatsApp message — I would love to get to know you, listen, and think together about how I can help.' },
-        'cta.contact': { he: 'שליחת הודעה בוואטסאפ', en: 'Send a WhatsApp message' },
-        'contact.loc': { he: 'רעננה, ישראל', en: "Ra'anana, Israel" },
-
-        'footer': { he: '<span class="mono-f">שולי קורני</span> · מאמנת הורים ו-ADHD · רעננה',
-                    en: '<span class="mono-f">Shuli Corney</span> · Parenting & ADHD Coach · Ra\'anana' }
-      };
-
-      // ---------- Split headlines into animated words ----------
-      function splitWords(el) {
-        var nodes = Array.prototype.slice.call(el.childNodes);
-        el.innerHTML = '';
-        var i = 0;
-        nodes.forEach(function (node) {
-          if (node.nodeType === 3) {
-            node.textContent.split(/(\s+)/).forEach(function (part) {
-              if (part === '') return;
-              if (/^\s+$/.test(part)) { el.appendChild(document.createTextNode(part)); return; }
-              var w = document.createElement('span'); w.className = 'word';
-              var inner = document.createElement('span'); inner.className = 'inner';
-              inner.textContent = part;
-              inner.style.setProperty('--i', i++);
-              w.appendChild(inner); el.appendChild(w);
-            });
-          } else {
-            var w2 = document.createElement('span'); w2.className = 'word';
-            node.className = (node.className ? node.className + ' ' : '') + 'inner';
-            node.style.setProperty('--i', i++);
-            w2.appendChild(node); el.appendChild(w2);
-          }
-        });
-      }
-
-      // ---------- Apply a language ----------
-      function applyLang(lang) {
-        document.documentElement.lang = lang;
-        document.documentElement.dir = (lang === 'he') ? 'rtl' : 'ltr';
-
-        document.querySelectorAll('[data-key]').forEach(function (el) {
-          var entry = T[el.getAttribute('data-key')];
-          if (!entry || entry[lang] == null) return;
-          if (el.classList.contains('reveal-text')) {
-            el.innerHTML = entry[lang];
-            splitWords(el);            // 'in' class (if present) is preserved
-          } else {
-            el.innerHTML = entry[lang];
-          }
-        });
-
-        document.querySelectorAll('.js-wa').forEach(function (a) { a.href = WA[lang]; });
-
-        toggleBtn.textContent = (lang === 'he') ? 'EN' : 'עב';
-        try { localStorage.setItem('shuli-lang', lang); } catch (e) {}
-        currentLang = lang;
-      }
-
-      var toggleBtn = document.getElementById('langToggle');
-      var currentLang = 'he';
-
-      // Initialise WhatsApp links + initial split (Hebrew, animated)
-      document.querySelectorAll('.js-wa').forEach(function (a) { a.href = WA.he; });
-      document.querySelectorAll('.reveal-text').forEach(splitWords);
-
-      // ---------- IntersectionObserver reveals ----------
-      var els = document.querySelectorAll('.reveal, .reveal-text');
-      if (!('IntersectionObserver' in window)) {
-        els.forEach(function (el) { el.classList.add('in'); });
-      } else {
-        var io = new IntersectionObserver(function (entries) {
-          entries.forEach(function (entry) {
-            if (entry.isIntersecting) {
-              entry.target.classList.add('in');
-              io.unobserve(entry.target);
-            }
-          });
-        }, { threshold: 0.15, rootMargin: '0px 0px -8% 0px' });
-        els.forEach(function (el) { io.observe(el); });
-      }
-
-      // ---------- Nav background + parallax ----------
-      var nav = document.getElementById('nav');
-      function onScroll() {
-        if (window.scrollY > 40) nav.classList.add('scrolled');
-        else nav.classList.remove('scrolled');
-        document.querySelectorAll('[data-parallax]').forEach(function (p) {
-          var speed = parseFloat(p.getAttribute('data-parallax'));
-          var rect = p.getBoundingClientRect();
-          var offset = (rect.top + rect.height / 2 - window.innerHeight / 2) * -speed;
-          p.style.transform = 'translateY(' + offset.toFixed(1) + 'px)';
-        });
-      }
-      window.addEventListener('scroll', onScroll, { passive: true });
-      onScroll();
-
-      // ---------- Language toggle ----------
-      toggleBtn.addEventListener('click', function () {
-        applyLang(currentLang === 'he' ? 'en' : 'he');
-      });
-
-      // Restore saved language preference (defaults to English on first visit)
-      var saved;
-      try { saved = localStorage.getItem('shuli-lang'); } catch (e) {}
-      applyLang(saved === 'he' ? 'he' : 'en');
-    })();
-  </script>
-
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
+          integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+  <script src="js/config.js"></script>
+  <script src="js/texts.js"></script>
+  <script src="js/animations.js"></script>
+  <script src="js/main.js"></script>
 </body>
 </html>
