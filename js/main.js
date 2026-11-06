@@ -37,7 +37,9 @@
     var all = {
       window: deliveryWindow(),
       date: formatDate(getDeliveryDate()),
-      number: CFG.contact.bitNumber
+      number: CFG.contact.bitNumber,
+      fee: money(CFG.ice.deliveryFee),
+      freeKg: CFG.ice.freeDeliveryFromKg
     };
     if (vars) for (var k in vars) all[k] = vars[k];
     s = s.replace(/\{(\w+)\}/g, function (m, name) {
@@ -65,7 +67,7 @@
     saveLang(l);
     clearErrors();
     applyTexts();
-    renderProducts();
+    renderPrices();
     updatePayBoxes();
     updateTotal();
     updateWaLinks();
@@ -105,48 +107,43 @@
   }
   function isoDate(date) { return date.toISOString().slice(0, 10); }
 
-  /* ================= Products ================= */
+  /* ================= Ice & prices ================= */
   function money(n) { return CFG.currency + n; }
-  function productById(id) { return CFG.products.filter(function (p) { return p.id === id; })[0]; }
-  function loc(obj) { return obj ? (obj[lang] || obj.en || "") : ""; }
 
-  function renderProducts() {
-    var cards = $("#price-cards");
-    cards.innerHTML = "";
-    CFG.products.forEach(function (p) {
-      var card = document.createElement("article");
-      card.className = "price-card" + (p.popular ? " popular" : "");
-      card.innerHTML =
-        (p.popular ? '<span class="sticker">' + t("popular") + "</span>" : "") +
-        '<div class="price-emoji" aria-hidden="true">' + p.emoji + "</div>" +
-        "<h3></h3>" +
-        '<div class="price-amount" dir="ltr">' + money(p.price) + "</div>" +
-        '<div class="price-per">' + t("perBag") + "</div>" +
-        (loc(p.weight) ? '<span class="price-weight">⚖️ ' + t("weightLabel") + ": <span></span></span>" : "") +
-        '<p class="price-blurb"></p>';
-      $("h3", card).textContent = loc(p.name);
-      if (loc(p.weight)) $(".price-weight span", card).textContent = loc(p.weight);
-      $(".price-blurb", card).textContent = loc(p.blurb);
-      cards.appendChild(card);
+  // How much does it cost? Ice price + delivery (free from X kg)
+  function priceFor(kg) {
+    var I = CFG.ice;
+    var ice = kg * I.pricePerKg;
+    var fee = kg >= I.freeDeliveryFromKg ? 0 : I.deliveryFee;
+    return { ice: ice, fee: fee, total: ice + fee };
+  }
+
+  function renderPrices() {
+    var I = CFG.ice;
+    $("#price-per-kg").textContent = money(I.pricePerKg);
+    // a few example amounts under the big price
+    var ex = $("#price-examples");
+    ex.innerHTML = "";
+    [I.minKg, Math.max(I.minKg + 1, I.freeDeliveryFromKg), Math.max(I.minKg + 3, 5)].forEach(function (kg) {
+      var chip = document.createElement("span");
+      chip.className = "price-chip" + (kg >= I.freeDeliveryFromKg ? " is-free" : "");
+      chip.innerHTML = "<b></b><span dir=\"ltr\"></span>";
+      chip.firstChild.textContent = kg + " " + (lang === "he" ? "ק״ג" : "kg");
+      chip.lastChild.textContent = money(kg * I.pricePerKg);
+      ex.appendChild(chip);
     });
 
-    var holder = $("#size-options");
-    var current = (holder.querySelector("input:checked") || {}).value;
-    holder.innerHTML = "";
-    CFG.products.forEach(function (p) {
-      var lab = document.createElement("label");
-      lab.className = "choice";
-      lab.innerHTML =
-        '<input type="radio" name="size">' +
-        '<span class="choice-body"><b></b><small></small><span class="choice-price" dir="ltr"></span></span>';
-      var input = $("input", lab);
-      input.value = p.id;
-      if (p.id === current) input.checked = true;
-      $("b", lab).textContent = p.emoji + " " + loc(p.name);
-      $("small", lab).textContent = loc(p.weight);
-      $(".choice-price", lab).textContent = money(p.price);
-      holder.appendChild(lab);
-    });
+    // the kilo dropdown in the form
+    var sel = $("#f-kg");
+    var current = parseInt(sel.value, 10) || I.minKg;
+    sel.innerHTML = "";
+    for (var kg = I.minKg; kg <= I.maxKg; kg++) {
+      var o = document.createElement("option");
+      o.value = kg;
+      o.textContent = plainT(kg >= I.freeDeliveryFromKg ? "kgOptionFree" : "kgOption", { kg: kg, price: money(kg * I.pricePerKg) });
+      if (kg === current) o.selected = true;
+      sel.appendChild(o);
+    }
   }
 
   /* ================= Form helpers ================= */
@@ -161,9 +158,9 @@
     if (el.type === "radio") return el.checked ? el.value : ""; // only one radio button
     return (el.value || "").trim();
   }
-  function qty() {
-    var n = parseInt($("#f-qty").value, 10);
-    return isNaN(n) ? 0 : n;
+  function kgChosen() {
+    var n = parseInt($("#f-kg").value, 10);
+    return isNaN(n) ? CFG.ice.minKg : n;
   }
 
   // Israeli phone: mobile 05X-XXXXXXX, landline 02/03/04/08/09, 07X numbers, or +972
@@ -179,12 +176,17 @@
   }
 
   function updateTotal() {
-    var p = productById(val("size"));
-    var q = qty();
+    var kg = kgChosen();
+    var p = priceFor(kg);
     var weekly = val("orderType") === "weekly";
-    $("#total-amount").textContent = money(p && q > 0 ? p.price * q : 0);
-    $("#total-calc").textContent = p && q > 0 ? plainT("totalCalc", { qty: q, name: loc(p.name), price: money(p.price) }) : "";
+    $("#total-ice").textContent = plainT("totalIce", { kg: kg, price: money(p.ice) });
+    $("#total-delivery").textContent = p.fee ? plainT("totalDelivery", { fee: money(p.fee) }) : plainT("deliveryFree");
+    $("#total-amount").textContent = money(p.total);
     $("#total-weekly").textContent = weekly ? plainT("totalWeekly") : "";
+    var need = CFG.ice.freeDeliveryFromKg - kg;
+    var nudge = $("#kg-nudge");
+    nudge.textContent = need > 0 ? plainT("nudgeMore", { n: need }) : plainT("nudgeFree");
+    nudge.classList.toggle("is-free", need <= 0);
   }
 
   function updatePayBoxes() {
@@ -205,7 +207,7 @@
   }
 
   function clearErrors() {
-    ["name", "phone", "street", "size", "qty", "payment"].forEach(function (id) { setError(id, ""); });
+    ["name", "phone", "street", "payment"].forEach(function (id) { setError(id, ""); });
     $("#form-error").hidden = true;
   }
 
@@ -216,13 +218,11 @@
       ok = false;
       if (!first) first = form.elements[id] && form.elements[id].tagName ? form.elements[id] : $("#err-" + id);
     }
-    ["name", "phone", "street", "size", "qty", "payment"].forEach(function (id) { setError(id, ""); });
+    ["name", "phone", "street", "payment"].forEach(function (id) { setError(id, ""); });
 
     if (val("name").length < 2) fail("name", "errName");
     if (!normalizePhone(val("phone"))) fail("phone", "errPhone");
     if (!val("street")) fail("street", "errRequired");
-    if (!val("size")) fail("size", "errChoose");
-    if (qty() < 1) fail("qty", "errQty");
     if (!val("payment")) fail("payment", "errChoose");
 
     var box = $("#form-error");
@@ -234,8 +234,8 @@
 
   /* ================= Building the order ================= */
   function buildOrder() {
-    var p = productById(val("size"));
-    var q = qty();
+    var kg = kgChosen();
+    var p = priceFor(kg);
     var date = getDeliveryDate();
     return {
       name: val("name"),
@@ -245,11 +245,10 @@
       floor: val("floor"),
       code: val("code"),
       notes: val("notes"),
-      productId: p.id,
-      productName: p.name,          // {en, he}
-      qty: q,
-      unitPrice: p.price,
-      total: p.price * q,
+      kg: kg,
+      icePrice: p.ice,
+      deliveryFee: p.fee,
+      total: p.total,
       orderType: val("orderType") === "weekly" ? "weekly" : "once",
       payment: val("payment"),
       deliveryDate: date,
@@ -267,13 +266,14 @@
   }
   function typeLabel(o, l) {
     var T = TEXTS[l || lang];
-    return o.orderType === "weekly" ? T.typeWeekly + " (" + T.typeWeeklySub + ")" : T.typeOnce;
+    return o.orderType === "weekly" ? "📅 " + T.typeWeekly : T.typeOnce;
   }
   function payLabel(o, l) {
     var T = TEXTS[l || lang];
     return o.payment === "bit" ? T.payBit : T.payCash;
   }
-  function iceLabel(o, l) { return o.qty + " × " + (o.productName[l || lang] || o.productName.en); }
+  function iceLabel(o, l) { return o.kg + ((l || lang) === "he" ? " ק״ג" : " kg") + " (" + money(o.icePrice) + ")"; }
+  function feeLabel(o, l) { return o.deliveryFee ? money(o.deliveryFee) : TEXTS[l || lang].free + " 🎉"; }
   function totalLabel(o, l) {
     return money(o.total) + (o.orderType === "weekly" ? " " + TEXTS[l || lang].totalWeekly : "");
   }
@@ -287,6 +287,7 @@
       [T.sumIce, iceLabel(o)],
       [T.sumType, typeLabel(o)],
       [T.sumPay, payLabel(o)],
+      [T.sumDelivery, feeLabel(o)],
       [T.sumTotal, totalLabel(o)],
       [T.sumDate, formatDate(o.deliveryDate) + ", " + deliveryWindow()]
     ];
@@ -322,6 +323,7 @@
       "🧊 " + T.sumIce + ": " + iceLabel(o),
       "🔁 " + T.sumType + ": " + typeLabel(o),
       "💳 " + T.sumPay + ": " + payLabel(o),
+      "🚚 " + T.sumDelivery + ": " + feeLabel(o),
       "💰 " + T.sumTotal + ": " + totalLabel(o),
       "📅 " + T.sumDate + ": " + formatDate(o.deliveryDate) + ", " + deliveryWindow()
     ];
@@ -349,9 +351,9 @@
       name: o.name,
       phone: o.phone,
       address: addressLine(o, "en"),
-      whatToBring: o.qty + " × " + o.productName.en,
-      size: o.productName.en,
-      qty: o.qty,
+      whatToBring: o.kg + " kg ice",
+      kg: o.kg,
+      deliveryFee: o.deliveryFee,
       payment: o.payment === "bit" ? "Bit" : "Cash",
       total: o.total,
       notes: o.notes,
@@ -442,16 +444,9 @@
   /* ================= Form wiring ================= */
   function initForm() {
     form = $("#order-form");
-    var qtyInput = $("#f-qty");
-
-    $("#qty-minus").addEventListener("click", function () { qtyInput.value = Math.max(1, qty() - 1); updateTotal(); });
-    $("#qty-plus").addEventListener("click", function () { qtyInput.value = Math.max(1, qty() + 1); updateTotal(); });
-    qtyInput.addEventListener("input", updateTotal);
-    qtyInput.addEventListener("blur", function () { if (qty() < 1) qtyInput.value = 1; updateTotal(); });
 
     form.addEventListener("change", function (e) {
       if (e.target.name === "payment") { updatePayBoxes(); setError("payment", ""); }
-      if (e.target.name === "size") setError("size", "");
       updateTotal();
     });
     ["name", "phone", "street"].forEach(function (id) {
@@ -514,7 +509,7 @@
     $("#new-order").addEventListener("click", function () {
       lastOrder = null;
       form.reset();
-      qtyInput.value = 1;
+      $("#f-kg").value = CFG.ice.minKg;
       updatePayBoxes();
       updateTotal();
       $("#thanks").hidden = true;
@@ -528,7 +523,7 @@
     lang = loadLang();
     initForm();
     applyTexts();
-    renderProducts();
+    renderPrices();
     updatePayBoxes();
     updateTotal();
     updateWaLinks();

@@ -1,51 +1,28 @@
 /* =====================================================================
    🧊 ICE DROP — SETTINGS FILE
    ---------------------------------------------------------------------
-   This is the ONE file you edit to change prices, bags, delivery times,
+   This is the ONE file you edit to change prices, delivery times,
    phone numbers, the map and the music.
 
    Rules for editing safely:
    • Keep the quotes "like this" around words.
    • Keep the commas at the end of lines.
-   • Numbers (like prices) have NO quotes:  price: 10,
+   • Numbers (like prices) have NO quotes:  pricePerKg: 6,
    • After editing, save, refresh the website, and check it still works.
    ===================================================================== */
 
 window.ICE_DROP_CONFIG = {
 
-  /* ---------- 🛍️ PRODUCTS ----------
-     To add a new bag or bundle: copy one whole { ... } block,
-     paste it below the last one (add a comma between blocks),
-     and give it a NEW id (lowercase, no spaces).               */
-  products: [
-    {
-      id: "small",
-      emoji: "🧊",
-      name:   { en: "Small bag", he: "שקית קטנה" },
-      weight: { en: "? kg", he: "? ק״ג" },          // ⚠️ TODO: put the real weight, e.g. "2 kg" / "2 ק״ג"
-      blurb:  { en: "Perfect for drinks at home", he: "מושלם לשתייה קרה בבית" },
-      price: 10                                      // in NIS (₪)
-    },
-    {
-      id: "large",
-      emoji: "🧊🧊",
-      name:   { en: "Large bag", he: "שקית גדולה" },
-      weight: { en: "? kg", he: "? ק״ג" },          // ⚠️ TODO: put the real weight
-      blurb:  { en: "For parties, coolers & heatwaves", he: "למסיבות, צידניות וגלי חום" },
-      price: 18,
-      popular: true                                  // shows a "Most popular" sticker
-    }
-    /* Example of a bundle you could add later (remove the  /*  and  *\/ ):
-    ,{
-      id: "party",
-      emoji: "🎉",
-      name:   { en: "Party pack (3 large)", he: "חבילת מסיבה (3 גדולות)" },
-      weight: { en: "? kg", he: "? ק״ג" },
-      blurb:  { en: "Big summer party? Done.", he: "מסיבת קיץ גדולה? סגור." },
-      price: 50
-    }
-    */
-  ],
+  /* ---------- 🧊 ICE & PRICES ----------
+     Ice is sold by the kilo. The order form shows a dropdown
+     from minKg to maxKg (2 kg, 3 kg, 4 kg …).                    */
+  ice: {
+    pricePerKg: 6,          // ₪ per kilo  (2 kg = ₪12)
+    minKg: 2,               // smallest order
+    maxKg: 30,              // biggest choice in the dropdown (just raise it if you want)
+    deliveryFee: 6,         // ₪ delivery
+    freeDeliveryFromKg: 3   // delivery is FREE from this many kilos
+  },
 
   currency: "₪",
 

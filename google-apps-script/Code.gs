@@ -166,6 +166,7 @@ function sendAlert_(d, weekly, payText, total) {
     "Address: " + (d.address || ""),
     "What to bring: " + (d.whatToBring || ""),
     "Pays with: " + payText,
+    "Delivery fee: " + (Number(d.deliveryFee) ? "₪" + d.deliveryFee : "FREE"),
     "Money to collect: ₪" + total + (weekly ? " (every week)" : ""),
     "Delivery: " + (d.deliveryFridayText || d.deliveryFriday || ""),
     "Notes: " + (d.notes || "-"),
@@ -205,9 +206,10 @@ function testOrder() {
     name: "Test Person",
     phone: "050-123-4567",
     address: "Test Street 1, Apt. 2, Floor 1, Code 1234",
-    whatToBring: "2 × Large bag",
+    whatToBring: "3 kg ice",
+    deliveryFee: 0,
     payment: "Cash",
-    total: 36,
+    total: 18,
     notes: "This is a test, you can delete this row"
   }) } });
 }

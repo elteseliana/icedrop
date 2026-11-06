@@ -178,8 +178,15 @@
       <div class="wrap">
         <h2 class="section-title" data-t="pricesTitle"></h2>
         <p class="section-sub" data-t="pricesSub"></p>
-        <!-- Product cards are built automatically from js/config.js -->
-        <div id="price-cards" class="price-grid"></div>
+        <!-- Built automatically from js/config.js -->
+        <div class="price-hero">
+          <div class="price-tag">
+            <span class="price-tag-amount" dir="ltr" id="price-per-kg"></span>
+            <span class="price-tag-unit" data-t="perKg"></span>
+          </div>
+          <div class="price-examples" id="price-examples"></div>
+          <p class="free-badge" data-t="deliveryRule"></p>
+        </div>
 
         <div class="info-grid">
           <div class="info-card">
@@ -212,14 +219,8 @@
       <div class="wrap wrap-narrow">
         <div id="order-form-wrap">
           <h2 class="section-title" data-t="orderTitle"></h2>
-          <p class="section-sub" data-t="orderSub"></p>
-
-          <div class="delivery-banner">
-            <p class="cutoff" data-t="cutoffBanner"></p>
-            <p class="your-delivery" data-t="yourDelivery" data-vars="date,window"></p>
-          </div>
-
-          <form id="order-form" novalidate>
+          <form id="order-form" class="order-card" novalidate>
+            <p class="order-when" data-t="orderWhen"></p>
             <p id="form-error" class="form-error" role="alert" hidden></p>
 
             <!-- Honeypot: hidden from people, bots fill it in -->
@@ -227,124 +228,81 @@
               <label>Leave empty <input type="text" name="website" tabindex="-1" autocomplete="off"></label>
             </div>
 
-            <fieldset class="card-fs">
-              <legend data-t="fsYou"></legend>
+            <div class="row-2">
               <div class="field">
-                <label for="f-name"><span data-t="fName"></span> *</label>
+                <label for="f-name" data-t="fName"></label>
                 <input id="f-name" name="name" type="text" autocomplete="name" required maxlength="80" data-ph="fNamePh">
                 <p class="err" id="err-name"></p>
               </div>
               <div class="field">
-                <label for="f-phone"><span data-t="fPhone"></span> *</label>
+                <label for="f-phone" data-t="fPhone"></label>
                 <input id="f-phone" name="phone" type="tel" inputmode="tel" autocomplete="tel" required maxlength="20" dir="ltr" data-ph="fPhonePh">
                 <p class="err" id="err-phone"></p>
               </div>
-            </fieldset>
+            </div>
 
-            <fieldset class="card-fs">
-              <legend data-t="fsAddress"></legend>
-              <div class="field">
-                <label for="f-street"><span data-t="fStreet"></span> *</label>
-                <input id="f-street" name="street" type="text" autocomplete="street-address" required maxlength="120" data-ph="fStreetPh">
-                <p class="err" id="err-street"></p>
+            <div class="field">
+              <label for="f-street" data-t="fStreet"></label>
+              <input id="f-street" name="street" type="text" autocomplete="street-address" required maxlength="120" data-ph="fStreetPh">
+              <p class="err" id="err-street"></p>
+              <div class="row-3">
+                <input id="f-apt" name="apt" type="text" maxlength="10" inputmode="numeric" data-ph="fApt" data-t-label="fApt">
+                <input id="f-floor" name="floor" type="text" maxlength="10" inputmode="numeric" data-ph="fFloor" data-t-label="fFloor">
+                <input id="f-code" name="code" type="text" maxlength="20" data-ph="fCode" data-t-label="fCode">
               </div>
-              <div class="field-row">
-                <div class="field">
-                  <label for="f-apt"><span data-t="fApt"></span> <small data-t="optional"></small></label>
-                  <input id="f-apt" name="apt" type="text" maxlength="10" inputmode="numeric">
-                </div>
-                <div class="field">
-                  <label for="f-floor"><span data-t="fFloor"></span> <small data-t="optional"></small></label>
-                  <input id="f-floor" name="floor" type="text" maxlength="10" inputmode="numeric">
-                </div>
-                <div class="field">
-                  <label for="f-code"><span data-t="fCode"></span> <small data-t="optional"></small></label>
-                  <input id="f-code" name="code" type="text" maxlength="20" dir="ltr" data-ph="fCodePh">
-                </div>
-              </div>
-              <div class="field">
-                <label for="f-notes"><span data-t="fNotes"></span> <small data-t="optional"></small></label>
-                <textarea id="f-notes" name="notes" rows="2" maxlength="400" data-ph="fNotesPh"></textarea>
-              </div>
-            </fieldset>
+            </div>
 
-            <fieldset class="card-fs">
-              <legend data-t="fsIce"></legend>
-              <div class="field" role="radiogroup" aria-labelledby="lbl-size">
-                <p class="label" id="lbl-size"><span data-t="fSize"></span> *</p>
-                <!-- Size choices are built automatically from js/config.js -->
-                <div id="size-options" class="choice-grid"></div>
-                <p class="err" id="err-size"></p>
+            <div class="field">
+              <label for="f-kg" data-t="fKg"></label>
+              <div class="select-wrap">
+                <select id="f-kg" name="kg"></select>
               </div>
+              <p class="nudge" id="kg-nudge" aria-live="polite"></p>
+            </div>
 
-              <div class="field">
-                <label for="f-qty"><span data-t="fQty"></span> *</label>
-                <div class="qty">
-                  <button type="button" class="qty-btn" id="qty-minus" data-t-label="qtyMinus">−</button>
-                  <input id="f-qty" name="qty" type="number" inputmode="numeric" min="1" step="1" value="1" required dir="ltr">
-                  <button type="button" class="qty-btn" id="qty-plus" data-t-label="qtyPlus">+</button>
-                </div>
-                <p class="err" id="err-qty"></p>
+            <div class="field">
+              <span class="label" id="lbl-type" data-t="fType"></span>
+              <div class="seg" role="radiogroup" aria-labelledby="lbl-type">
+                <label><input type="radio" name="orderType" value="once" checked><span data-t="typeOnce"></span></label>
+                <label><input type="radio" name="orderType" value="weekly"><span data-t="typeWeekly"></span></label>
               </div>
+            </div>
 
-              <div class="field" role="radiogroup" aria-labelledby="lbl-type">
-                <p class="label" id="lbl-type"><span data-t="fType"></span> *</p>
-                <div class="choice-grid">
-                  <label class="choice">
-                    <input type="radio" name="orderType" value="once" checked>
-                    <span class="choice-body"><b data-t="typeOnce"></b><small data-t="typeOnceSub"></small></span>
-                  </label>
-                  <label class="choice">
-                    <input type="radio" name="orderType" value="weekly">
-                    <span class="choice-body"><b data-t="typeWeekly"></b><small data-t="typeWeeklySub"></small></span>
-                  </label>
-                </div>
+            <div class="field">
+              <span class="label" id="lbl-pay" data-t="fsPay"></span>
+              <div class="seg" role="radiogroup" aria-labelledby="lbl-pay">
+                <label><input type="radio" name="payment" value="bit"><span>📱 <span data-t="payBit"></span></span></label>
+                <label><input type="radio" name="payment" value="cash"><span>💵 <span data-t="payCash"></span></span></label>
               </div>
-            </fieldset>
-
-            <fieldset class="card-fs">
-              <legend data-t="fsPay"></legend>
-              <div class="field" role="radiogroup" aria-labelledby="lbl-pay">
-                <p class="label sr-only" id="lbl-pay" data-t="fsPay"></p>
-                <div class="choice-grid">
-                  <label class="choice">
-                    <input type="radio" name="payment" value="bit">
-                    <span class="choice-body"><b>📱 <span data-t="payBit"></span></b><small data-t="payBitSub"></small></span>
-                  </label>
-                  <label class="choice">
-                    <input type="radio" name="payment" value="cash">
-                    <span class="choice-body"><b>💵 <span data-t="payCash"></span></b><small data-t="payCashSub"></small></span>
-                  </label>
-                </div>
-                <p class="err" id="err-payment"></p>
-              </div>
+              <p class="err" id="err-payment"></p>
 
               <div id="bit-box" class="pay-box" hidden>
-                <h4 data-t="bitBoxTitle"></h4>
                 <p data-t="bitBoxText"></p>
-                <div class="bit-number">
+                <div class="bit-row">
                   <span class="bit-num js-bit-number" dir="ltr"></span>
                   <button type="button" class="btn btn-small js-copy-bit" data-t="bitCopy"></button>
+                  <a class="btn btn-small btn-bit js-bit-pay" href="#" target="_blank" rel="noopener" data-t="bitPayBtn"></a>
                 </div>
-                <a class="btn btn-bit js-bit-pay" href="#" target="_blank" rel="noopener" data-t="bitPayBtn"></a>
                 <p class="bit-toast" role="status" aria-live="polite"></p>
               </div>
-              <div id="cash-box" class="pay-box" hidden>
-                <p data-t="cashBoxText"></p>
-              </div>
-            </fieldset>
+              <p id="cash-box" class="pay-note" hidden data-t="cashBoxText"></p>
+            </div>
 
-            <p class="reminder" data-t="homeReminder" data-vars="window"></p>
+            <details class="notes">
+              <summary data-t="addNote"></summary>
+              <textarea id="f-notes" name="notes" rows="2" maxlength="400" data-ph="fNotesPh" data-t-label="fNotes"></textarea>
+            </details>
 
             <div class="total" aria-live="polite">
-              <div>
-                <span class="total-label" data-t="totalLabel"></span>
-                <small id="total-calc" class="total-calc"></small>
+              <div class="total-lines">
+                <span id="total-ice"></span>
+                <span id="total-delivery"></span>
               </div>
-              <div class="total-amount"><span id="total-amount" dir="ltr"></span> <small id="total-weekly"></small></div>
+              <div class="total-amount"><span id="total-amount" dir="ltr"></span><small id="total-weekly"></small></div>
             </div>
 
             <button type="submit" class="btn btn-primary btn-big btn-block" id="submit-btn" data-t="submit"></button>
+            <p class="reminder-small" data-t="homeReminderShort" data-vars="window"></p>
           </form>
         </div>
 

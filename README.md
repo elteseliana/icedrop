@@ -6,7 +6,7 @@ Ice delivery in Ra'anana, every Friday. Plain HTML, CSS and JavaScript, with no 
 
 | File | What it is | Edit it? |
 |---|---|---|
-| `js/config.js` | **Settings**: products, prices, bag weights, delivery day/time, cutoff, WhatsApp/Bit number, Bit link, Google Sheet link, map center, Spotify link | ✅ Yes, this is the main one |
+| `js/config.js` | **Settings**: price per kilo, kilo choices, delivery fee & free-delivery amount, delivery day/time, cutoff, WhatsApp/Bit number, Bit link, Google Sheet link, map center, Spotify link | ✅ Yes, this is the main one |
 | `js/texts.js` | **All the words** on the site, in English and Hebrew | ✅ Yes |
 | `index.html` | The page layout | Only for layout changes |
 | `css/style.css` | Colors and design (colors are at the very top) | Sometimes |
@@ -16,9 +16,10 @@ Ice delivery in Ra'anana, every Friday. Plain HTML, CSS and JavaScript, with no 
 
 ## ✏️ Common changes
 
-- **Change a price:** `js/config.js` → `price: 10,` → change the number.
-- **Add the bag weights:** `js/config.js` → `weight: { en: "? kg", he: "? ק״ג" }` → e.g. `{ en: "2 kg", he: "2 ק״ג" }`.
-- **Add a bundle:** in `js/config.js` there's a ready example under the products. Remove the `/*` and `*/` around it and change it. It appears on the price list and in the form automatically.
+- **Change the price per kilo:** `js/config.js` → `pricePerKg: 6,`
+- **Smallest / biggest order in the dropdown:** `minKg: 2,` and `maxKg: 30,`
+- **Delivery fee and free delivery:** `deliveryFee: 6,` and `freeDeliveryFromKg: 3,`
+  The price list, dropdown, total and WhatsApp message all update by themselves.
 - **Change a sentence:** `js/texts.js`. Change both `en` and `he`.
 - **Bit payment link:** `js/config.js` → `bitPaymentLink: ""` → paste your link between the quotes.
 
