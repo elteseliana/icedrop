@@ -1,19 +1,20 @@
 <!doctype html>
 <!--
   ICE DROP — main page.
-  Most words are NOT here. They live in js/texts.js (English + Hebrew).
-  Prices, times and phone numbers live in js/config.js.
+  Words live in js/texts.js (English + Hebrew).
+  Prices, delivery days and phone numbers live in the Google Sheet.
+  Site-only settings (Sheet link, map, photo, music) live in js/config.js.
   Elements with data-t="someKey" get their words from texts.js.
 -->
 <html lang="he" dir="rtl">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-  <title>Ice Drop — משלוח קרח עד הדלת ברעננה</title>
-  <meta name="description" content="Ice Drop: cold ice delivered to your door in Ra'anana every Friday. משלוח קרח עד הדלת ברעננה בכל יום שישי.">
+  <title>Ice Drop</title>
+  <meta name="description" content="Ice Drop: 30% more ice than the makolet, delivered to your door in Ra'anana, same price. 30% יותר קרח מהמכולת, עד הדלת ברעננה, באותו מחיר.">
   <meta name="theme-color" content="#1e90d6">
   <meta property="og:title" content="Ice Drop · Colder days ahead">
-  <meta property="og:description" content="Ra'anana is hot. Your freezer is empty. We've got you.">
+  <meta property="og:description" content="30% more ice than the makolet. Delivered. Same price.">
   <link rel="icon" href="assets/favicon.svg" type="image/svg+xml">
 
   <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -34,6 +35,8 @@
        ice-rain: 3D ice cubes fall after an order -->
   <div id="frost" class="frost" aria-hidden="true"><canvas id="frost-canvas"></canvas></div>
   <canvas id="ice-rain" class="ice-rain" aria-hidden="true"></canvas>
+
+  <p id="demo-banner" class="demo-banner" data-t="demoBanner" hidden></p>
 
   <!-- ===== Header ===== -->
   <header class="site-header">
@@ -68,7 +71,7 @@
   </header>
 
   <main id="top">
-    <!-- ===== Hero ===== -->
+    <!-- ===== Hero: the pitch ===== -->
     <section class="hero">
       <div class="wrap hero-grid">
         <div class="hero-text">
@@ -76,31 +79,30 @@
           <h1 class="hero-title" data-t="heroTitle"></h1>
           <p class="hero-sub" data-t="heroSub"></p>
           <div class="hero-ctas">
-            <a href="#order" class="btn btn-primary" data-t="heroCta">Order ice</a>
-            <a href="#prices" class="btn btn-outline" data-t="heroCta2">See prices</a>
+            <a href="#order" class="btn btn-primary btn-big" data-t="heroCta">Order ice</a>
+            <a href="#prices" class="btn btn-outline btn-big" data-t="heroCta2">See prices</a>
           </div>
-          <dl class="hero-facts">
-            <div><dt data-t="factDay"></dt><dd data-t="heroBadge" data-vars="window"></dd></div>
-            <div><dt data-t="factCutoff"></dt><dd data-t="factCutoffVal"></dd></div>
-            <div><dt data-t="factPrice"></dt><dd data-t="factPriceVal"></dd></div>
-          </dl>
+
+          <!-- Makolet vs Ice Drop (numbers filled in from the settings) -->
+          <div class="compare">
+            <div class="cmp cmp-them">
+              <span class="cmp-name" data-t="cmpMakolet"></span>
+              <span class="cmp-kg"><b class="js-mk-kg" dir="ltr"></b> <span data-t="kg"></span></span>
+              <span class="cmp-price js-mk-price" dir="ltr"></span>
+              <span class="cmp-note" data-t="cmpCarry"></span>
+            </div>
+            <div class="cmp cmp-us">
+              <span class="cmp-badge" data-t="cmpMore"></span>
+              <span class="cmp-name" dir="ltr" lang="en">Ice Drop</span>
+              <span class="cmp-kg"><b class="js-our-kg" dir="ltr"></b> <span data-t="kg"></span></span>
+              <span class="cmp-price js-our-price" dir="ltr"></span>
+              <span class="cmp-note" data-t="cmpDelivered"></span>
+            </div>
+          </div>
         </div>
         <figure class="hero-photo">
           <img src="assets/img/ice-cubes-tall.jpg" alt="" width="900" height="1323" fetchpriority="high">
         </figure>
-      </div>
-    </section>
-
-    <!-- ===== Story ===== -->
-    <section class="section story" id="story">
-      <div class="wrap">
-        <h2 class="section-title" data-t="storyTitle"></h2>
-        <ol class="story-list">
-          <li><span class="story-num" aria-hidden="true">01</span><p data-t="story1"></p></li>
-          <li><span class="story-num" aria-hidden="true">02</span><p data-t="story2"></p></li>
-          <li><span class="story-num" aria-hidden="true">03</span><p data-t="story3"></p></li>
-          <li><span class="story-num" aria-hidden="true">04</span><p data-t="story4"></p></li>
-        </ol>
       </div>
     </section>
 
@@ -110,12 +112,12 @@
         <h2 class="section-title" data-t="whyTitle"></h2>
         <div class="why-grid">
           <article class="why-card">
-            <img class="why-photo" src="assets/img/ice-machine-photo.jpg" alt="" width="510" height="496" loading="lazy">
+            <img class="why-photo" src="assets/img/ice-bag.jpg" alt="" width="511" height="501" loading="lazy">
             <h3 data-t="why1Title"></h3>
             <p data-t="why1Text"></p>
           </article>
           <article class="why-card">
-            <img class="why-photo" src="assets/img/ice-bag.jpg" alt="" width="511" height="501" loading="lazy">
+            <img class="why-photo" src="assets/img/ice-machine-photo.jpg" alt="" width="510" height="496" loading="lazy">
             <h3 data-t="why2Title"></h3>
             <p data-t="why2Text"></p>
           </article>
@@ -128,35 +130,32 @@
       </div>
     </section>
 
-    <!-- ===== Prices ===== -->
+    <!-- ===== Meet the ice guy (shown only when a photo is set in config.js) ===== -->
+    <section class="section team" id="team" hidden>
+      <div class="wrap team-grid">
+        <figure class="team-photo"><img id="team-img" alt="" loading="lazy"></figure>
+        <div>
+          <h2 class="section-title" data-t="teamTitle"></h2>
+          <p class="team-text" data-t="teamText"></p>
+        </div>
+      </div>
+    </section>
+
+    <!-- ===== Prices (built from the Sheet's Settings) ===== -->
     <section class="section prices" id="prices">
       <div class="wrap">
         <h2 class="section-title" data-t="pricesTitle"></h2>
         <p class="section-sub" data-t="pricesSub"></p>
-        <!-- Built automatically from js/config.js -->
-        <div class="price-hero">
-          <img class="price-photo" src="assets/img/ice-cubes-tall.jpg" alt="" width="900" height="1323" loading="lazy">
-          <div class="price-body">
-            <div class="price-tag">
-              <span class="price-tag-amount" dir="ltr" id="price-per-kg"></span>
-              <span class="price-tag-unit" data-t="perKg"></span>
-            </div>
-            <div class="price-examples" id="price-examples"></div>
-            <p class="free-badge" data-t="deliveryRule"></p>
-          </div>
-        </div>
-
-        <div class="info-grid">
-          <div class="info-card">
-            <h3 data-t="deliveryInfoTitle"></h3>
-            <p data-t="deliveryInfoDay" data-vars="window"></p>
-            <p data-t="deliveryInfoCutoff"></p>
-            <p class="next-date" data-t="deliveryInfoNext" data-vars="date"></p>
-          </div>
-          <div class="info-card">
-            <h3 data-t="weeklyInfoTitle"></h3>
-            <p data-t="weeklyInfoText"></p>
-            <a class="btn btn-wa js-pause-link" target="_blank" rel="noopener" data-t="pauseBtn" href="#"></a>
+        <div class="price-grid">
+          <article class="price-card price-bag">
+            <p class="price-name" data-t="bagTitle"></p>
+            <p class="price-desc js-bag-desc"></p>
+            <p class="price-now"><span class="js-bag-price" dir="ltr"></span> <small data-t="perBag"></small></p>
+            <p class="price-foot js-bag-max"></p>
+          </article>
+          <div class="price-coolers">
+            <p class="price-group-title" data-t="coolersTitle"></p>
+            <div id="cooler-cards" class="cooler-cards"></div>
           </div>
         </div>
       </div>
@@ -178,110 +177,127 @@
         <div id="order-form-wrap">
           <h2 class="section-title" data-t="orderTitle"></h2>
           <form id="order-form" class="order-card" novalidate>
-            <p class="order-when" data-t="orderWhen"></p>
             <p id="form-error" class="form-error" role="alert" hidden></p>
-
-            <!-- Honeypot: hidden from people, bots fill it in -->
             <div class="hp" aria-hidden="true">
               <label>Leave empty <input type="text" name="website" tabindex="-1" autocomplete="off"></label>
             </div>
 
-            <div class="row-2">
+            <!-- 1. Ice -->
+            <fieldset class="step">
+              <legend><span class="step-num">1</span><span data-t="stepIce"></span></legend>
+
               <div class="field">
-                <label for="f-name" data-t="fName"></label>
-                <input id="f-name" name="name" type="text" autocomplete="name" required maxlength="80" data-ph="fNamePh">
-                <p class="err" id="err-name"></p>
+                <span class="label" id="lbl-bags" data-t="fBags"></span>
+                <div id="bag-picker" class="bag-picker" role="radiogroup" aria-labelledby="lbl-bags"></div>
+                <p class="hint js-bags-hint"></p>
+                <div id="upsell" class="upsell" hidden>
+                  <p class="js-upsell-text"></p>
+                  <button type="button" class="btn btn-small btn-primary" id="upsell-btn" data-t="upsellBtn"></button>
+                </div>
+              </div>
+
+              <div class="field">
+                <span class="label" id="lbl-cooler" data-t="fCooler"></span>
+                <div id="cooler-picker" class="cooler-picker" role="radiogroup" aria-labelledby="lbl-cooler"></div>
+                <label class="check" id="own-cooler-wrap" hidden>
+                  <input type="checkbox" name="ownCooler" id="f-own-cooler">
+                  <span data-t="ownCooler"></span>
+                </label>
+              </div>
+              <p class="err" id="err-ice"></p>
+            </fieldset>
+
+            <!-- 2. Delivery day (read from the Sheet's Slots tab) -->
+            <fieldset class="step">
+              <legend><span class="step-num">2</span><span data-t="stepSlot"></span></legend>
+              <div id="slot-list" class="slot-list" role="radiogroup" aria-live="polite"></div>
+              <p class="err" id="err-slot"></p>
+            </fieldset>
+
+            <!-- 3. Details -->
+            <fieldset class="step">
+              <legend><span class="step-num">3</span><span data-t="stepDetails"></span></legend>
+              <div class="row-2">
+                <div class="field">
+                  <label for="f-name" data-t="fName"></label>
+                  <input id="f-name" name="name" type="text" autocomplete="name" required maxlength="80" data-ph="fNamePh">
+                  <p class="err" id="err-name"></p>
+                </div>
+                <div class="field">
+                  <label for="f-phone" data-t="fPhone"></label>
+                  <input id="f-phone" name="phone" type="tel" inputmode="tel" autocomplete="tel" required maxlength="20" dir="ltr" data-ph="fPhonePh">
+                  <p class="err" id="err-phone"></p>
+                </div>
               </div>
               <div class="field">
-                <label for="f-phone" data-t="fPhone"></label>
-                <input id="f-phone" name="phone" type="tel" inputmode="tel" autocomplete="tel" required maxlength="20" dir="ltr" data-ph="fPhonePh">
-                <p class="err" id="err-phone"></p>
+                <label for="f-street" data-t="fStreet"></label>
+                <input id="f-street" name="street" type="text" autocomplete="street-address" required maxlength="120" data-ph="fStreetPh">
+                <p class="err" id="err-street"></p>
               </div>
-            </div>
-
-            <div class="field">
-              <label for="f-street" data-t="fStreet"></label>
-              <input id="f-street" name="street" type="text" autocomplete="street-address" required maxlength="120" data-ph="fStreetPh">
-              <p class="err" id="err-street"></p>
-              <div class="row-3">
-                <input id="f-apt" name="apt" type="text" maxlength="10" inputmode="numeric" data-ph="fApt" data-t-label="fApt">
-                <input id="f-floor" name="floor" type="text" maxlength="10" inputmode="numeric" data-ph="fFloor" data-t-label="fFloor">
-                <input id="f-code" name="code" type="text" maxlength="20" data-ph="fCode" data-t-label="fCode">
+              <div class="field">
+                <label for="f-apt"><span data-t="fApt"></span> <small class="opt">(<span data-t="optional"></span>)</small></label>
+                <input id="f-apt" name="apt" type="text" maxlength="60">
               </div>
-            </div>
-
-            <div class="field">
-              <label for="f-kg" data-t="fKg"></label>
-              <div class="select-wrap">
-                <select id="f-kg" name="kg"></select>
+              <div class="field">
+                <label for="f-notes"><span data-t="fNotes"></span> <small class="opt">(<span data-t="optional"></span>)</small></label>
+                <textarea id="f-notes" name="notes" rows="2" maxlength="300" data-ph="fNotesPh"></textarea>
               </div>
-              <p class="nudge" id="kg-nudge" aria-live="polite"></p>
-            </div>
+            </fieldset>
 
-            <div class="field">
-              <span class="label" id="lbl-type" data-t="fType"></span>
-              <div class="seg" role="radiogroup" aria-labelledby="lbl-type">
-                <label><input type="radio" name="orderType" value="once" checked><span data-t="typeOnce"></span></label>
-                <label><input type="radio" name="orderType" value="weekly"><span data-t="typeWeekly"></span></label>
-              </div>
-            </div>
-
-            <div class="field">
-              <span class="label" id="lbl-pay" data-t="fsPay"></span>
-              <div class="seg" role="radiogroup" aria-labelledby="lbl-pay">
-                <label><input type="radio" name="payment" value="bit"><span data-t="payBit"></span></label>
-                <label><input type="radio" name="payment" value="cash"><span data-t="payCash"></span></label>
+            <!-- 4. Payment -->
+            <fieldset class="step">
+              <legend><span class="step-num">4</span><span data-t="stepPay"></span></legend>
+              <div class="pay-options" role="radiogroup">
+                <label class="pay-option">
+                  <input type="radio" name="payment" value="bit">
+                  <span><b data-t="payBit"></b><small data-t="payBitSub"></small></span>
+                </label>
+                <label class="pay-option">
+                  <input type="radio" name="payment" value="cash">
+                  <span><b data-t="payCash"></b><small data-t="payCashSub"></small></span>
+                </label>
               </div>
               <p class="err" id="err-payment"></p>
+            </fieldset>
 
-              <div id="bit-box" class="pay-box" hidden>
-                <p data-t="bitBoxText"></p>
-                <div class="bit-row">
-                  <span class="bit-num js-bit-number" dir="ltr"></span>
-                  <button type="button" class="btn btn-small js-copy-bit" data-t="bitCopy"></button>
-                  <a class="btn btn-small btn-bit js-bit-pay" href="#" target="_blank" rel="noopener" data-t="bitPayBtn"></a>
-                </div>
-                <p class="bit-toast" role="status" aria-live="polite"></p>
-              </div>
-              <p id="cash-box" class="pay-note" hidden data-t="cashBoxText"></p>
-            </div>
-
-            <details class="notes">
-              <summary data-t="addNote"></summary>
-              <textarea id="f-notes" name="notes" rows="2" maxlength="400" data-ph="fNotesPh" data-t-label="fNotes"></textarea>
-            </details>
-
-            <div class="total" aria-live="polite">
-              <div class="total-lines">
-                <span id="total-ice"></span>
-                <span id="total-delivery"></span>
-              </div>
-              <div class="total-amount"><span id="total-amount" dir="ltr"></span><small id="total-weekly"></small></div>
+            <!-- Live order summary -->
+            <div class="summary-live" aria-live="polite">
+              <div class="sum-row"><span data-t="sumBags"></span><b id="sum-bags" dir="ltr"></b></div>
+              <div class="sum-row"><span data-t="sumKg"></span><b id="sum-kg" dir="ltr"></b></div>
+              <div class="sum-row js-sum-regular"><span data-t="sumRegular"></span><s id="sum-regular" dir="ltr"></s></div>
+              <div class="sum-row sum-save js-sum-save"><span data-t="sumSavings"></span><b id="sum-save" dir="ltr"></b></div>
+              <div class="sum-row sum-total"><span data-t="sumTotal"></span><b id="sum-total" dir="ltr"></b></div>
             </div>
 
             <button type="submit" class="btn btn-primary btn-big btn-block" id="submit-btn" data-t="submit"></button>
-            <p class="reminder-small" data-t="homeReminderShort" data-vars="window"></p>
           </form>
         </div>
 
-        <!-- ===== Thank-you screen (shown after submitting) ===== -->
+        <!-- ===== Confirmation screen ===== -->
         <div id="thanks" class="thanks" hidden tabindex="-1">
           <div class="thanks-check" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></div>
-          <h2 class="section-title" data-t="thanksTitle"></h2>
+          <h2 class="section-title" id="thanks-title"></h2>
           <p class="thanks-text" data-t="thanksText"></p>
 
-          <div class="summary">
-            <h3 data-t="thanksSummary"></h3>
-            <dl id="summary-list"></dl>
+          <dl id="confirm-list" class="confirm-list"></dl>
+
+          <div id="pay-bit" class="pay-box" hidden>
+            <h3 data-t="payBitTitle"></h3>
+            <p id="pay-bit-text"></p>
+            <div class="bit-row">
+              <span class="bit-num js-bit-number" dir="ltr"></span>
+              <button type="button" class="btn btn-small js-copy-bit" data-t="bitCopy"></button>
+            </div>
           </div>
+          <p id="pay-cash" class="pay-box" hidden></p>
 
-          <p class="reminder" data-t="homeReminder" data-vars="window"></p>
+          <p class="reminder" data-t="homeReminder"></p>
 
-          <a id="wa-order-btn" class="btn btn-wa btn-big btn-block" target="_blank" rel="noopener" href="#" data-t="waOrderBtn"></a>
-          <p class="hint" data-t="waOrderHint"></p>
-
-          <a id="thanks-pause" class="btn btn-wa-ghost btn-block js-pause-link" target="_blank" rel="noopener" href="#" data-t="pauseBtn" hidden></a>
-
+          <a id="wa-order-btn" class="btn btn-wa btn-big btn-block" target="_blank" rel="noopener" href="#">
+            <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M21 11.5a8.4 8.4 0 0 1-12.4 7.4L3 21l2.1-5.4A8.4 8.4 0 1 1 21 11.5z"/></svg>
+            <span data-t="waSave"></span>
+          </a>
+          <p class="hint" data-t="waHint"></p>
           <button type="button" id="new-order" class="btn btn-ghost" data-t="newOrder"></button>
         </div>
       </div>
