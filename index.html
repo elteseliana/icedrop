@@ -153,6 +153,14 @@
             </div>
 
             <div class="field">
+              <span class="label" id="lbl-type" data-t="fType"></span>
+              <div class="seg seg-type" role="radiogroup" aria-labelledby="lbl-type">
+                <label><input type="radio" name="orderType" value="once" checked><span data-t="typeOnce"></span></label>
+                <label><input type="radio" name="orderType" value="weekly"><span data-t="typeWeekly"></span></label>
+              </div>
+            </div>
+
+            <div class="field">
               <span class="label" id="lbl-ice" data-t="fIce"></span>
               <div id="ice-choices" class="ice-choices" role="radiogroup" aria-labelledby="lbl-ice"></div>
               <div id="upsell" class="upsell" hidden>
@@ -165,6 +173,7 @@
               <span class="label" id="lbl-slot" data-t="fDay"></span>
               <div id="slot-list" class="slot-chips" role="radiogroup" aria-labelledby="lbl-slot" aria-live="polite"></div>
               <p class="err" id="err-slot"></p>
+              <p class="dropoff" data-t="dropoff"></p>
             </div>
 
             <div class="row-2">
@@ -230,6 +239,7 @@
             <span data-t="waSave"></span>
           </a>
           <p class="hint" data-t="waHint"></p>
+          <a id="pause-link" class="pause-link" target="_blank" rel="noopener" href="#" data-t="pauseLink" hidden></a>
           <button type="button" id="new-order" class="btn btn-ghost" data-t="newOrder"></button>
         </div>
       </div>

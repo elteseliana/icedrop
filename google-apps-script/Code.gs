@@ -33,7 +33,7 @@ var ORDER_HEADERS = [
   "Timestamp", "Order ID", "Language", "Name", "Phone", "Address", "Apt/Floor", "Notes",
   "Slot date", "Time window", "Bags qty", "Cooler package", "Total bags", "Total kg",
   "Regular price", "Final price", "Savings", "Payment method", "Payment status",
-  "Own cooler (Y/N)", "Delivery status"
+  "Own cooler (Y/N)", "Delivery status", "Order type"
 ];
 var PAYMENT_STATUSES = ["Awaiting payment", "Paid", "Pay on delivery", "Cancelled"];
 var DELIVERY_STATUSES = ["New", "Delivered", "Cancelled"];
@@ -41,7 +41,8 @@ var SLOT_HEADERS = ["Date", "Day name (fills in by itself)", "Time window (optio
 
 // Settings tab: column A = name (don't change it), B = value, C = what it means
 var SETTINGS = [
-  ["Price per bag (₪)",          6,   "Price of one bag"],
+  ["Price per bag (₪)",          6,   "Price of one bag (weekly price)"],
+  ["One-time price increase (%)", 20, "One-time orders cost this much more than weekly (rounded to whole ₪). Delivery is always free."],
   ["Kg per bag",                 1.3, "How much ice is in one bag"],
   ["Max single bags",            4,   "Most loose bags someone can pick (bigger orders = cooler package)"],
   ["Quarter cooler bags",        5,   "Bags in a ¼ cooler"],
@@ -145,7 +146,8 @@ function doPost(e) {
     if (!name || !phone || !street) return json_({ ok: false, error: "missing_fields" });
 
     // Recalculate the price here (never trust the browser)
-    var p = price_(settings, d.bags, d.cooler);
+    var weekly = d.orderType === "weekly";
+    var p = price_(settings, d.bags, d.cooler, weekly);
     if (p.totalBags < 1) return json_({ ok: false, error: "no_ice" });
 
     // Check the slot is still open and has room (we hold the lock)
@@ -161,11 +163,13 @@ function doPost(e) {
     var payMethod = d.payment === "bit" ? "Bit / PayBox" : "Cash on delivery";
     var payStatus = d.payment === "bit" ? "Awaiting payment" : "Pay on delivery";
     var sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(TAB_ORDERS);
+    ensureHeaders_(sheet);
     var row = [
       new Date(), id, d.language === "en" ? "en" : "he", name, phone, street,
       clean_(d.apt), clean_(d.notes), parseIsoDate_(slot.date), slot.timeWindow,
       p.bags, p.coolerName, p.totalBags, p.totalKg, p.regular, p.final, p.savings,
-      payMethod, payStatus, (p.cooler !== "none" && d.ownCooler) ? "Y" : "N", "New"
+      payMethod, payStatus, (p.cooler !== "none" && d.ownCooler) ? "Y" : "N", "New",
+      weekly ? "Weekly" : "One-time"
     ];
     sheet.appendRow(row);
 
@@ -197,6 +201,7 @@ function readSettings_() {
   var num = function (k) { var n = Number(s[k]); return isNaN(n) ? Number(defaultOf_(k)) : n; };
   return {
     pricePerBag: num("Price per bag (₪)"),
+    oneTimeMarkup: num("One-time price increase (%)"),
     kgPerBag: num("Kg per bag"),
     maxBags: num("Max single bags"),
     packages: [
@@ -213,18 +218,21 @@ function readSettings_() {
 }
 function defaultOf_(k) { for (var i = 0; i < SETTINGS.length; i++) if (SETTINGS[i][0] === k) return SETTINGS[i][1]; return 0; }
 function publicSettings_(s) {
-  return { pricePerBag: s.pricePerBag, kgPerBag: s.kgPerBag, maxBags: s.maxBags, packages: s.packages,
+  return { pricePerBag: s.pricePerBag, oneTimeMarkup: s.oneTimeMarkup, kgPerBag: s.kgPerBag, maxBags: s.maxBags, packages: s.packages,
            bitNumber: s.bitNumber, whatsappNumber: s.whatsappNumber, cutoff: s.cutoff };
 }
 
 var COOLER_NAMES = { none: "None", quarter: "¼ cooler", half: "½ cooler", full: "Full cooler" };
-function price_(s, bags, cooler) {
+// Weekly = the prices in Settings. One-time = those prices + the one-time increase.
+function up_(s, price, weekly) { return weekly ? price : Math.round(price * (1 + s.oneTimeMarkup / 100)); }
+function price_(s, bags, cooler, weekly) {
   bags = Math.max(0, Math.min(s.maxBags, Math.floor(Number(bags) || 0)));
   var pkg = null;
   s.packages.forEach(function (p) { if (p.id === cooler) pkg = p; });
+  var bagPrice = up_(s, s.pricePerBag, weekly);
   var totalBags = bags + (pkg ? pkg.bags : 0);
-  var regular = totalBags * s.pricePerBag;
-  var final = bags * s.pricePerBag + (pkg ? pkg.price : 0);
+  var regular = totalBags * bagPrice;
+  var final = bags * bagPrice + (pkg ? up_(s, pkg.price, weekly) : 0);
   return {
     bags: bags, cooler: pkg ? pkg.id : "none", coolerName: COOLER_NAMES[pkg ? pkg.id : "none"],
     totalBags: totalBags, totalKg: Math.round(totalBags * s.kgPerBag * 10) / 10,
@@ -250,27 +258,42 @@ function listSlots_(s) {
     var win = timeText_(r[2]);
     var cap = Number(r[3]) || s.defaultCapacity;
     var id = date + "|" + win;
-    var remaining = Math.max(0, cap - (used[id] || 0));
+    var taken = used.once[id] || 0;
+    used.weekly.forEach(function (w) {                                  // weekly customers come back every week
+      if (w.win === win && w.date <= date && weekday_(w.date) === weekday_(date)) taken += w.bags;
+    });
+    var remaining = Math.max(0, cap - taken);
     out.push({ id: id, date: date, timeWindow: win, capacity: cap, remaining: remaining, soldOut: remaining === 0 });
   });
   out.sort(function (a, b) { return a.id < b.id ? -1 : 1; });
   return out;
 }
 
-// Bags already booked per slot (cancelled orders don't count)
+// Bags already booked: one-time orders per slot, weekly orders as a list (cancelled orders don't count)
 function bagsUsed_() {
   var sh = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(TAB_ORDERS);
-  var used = {};
+  var used = { once: {}, weekly: [] };
   if (!sh || sh.getLastRow() < 2) return used;
   var head = sh.getRange(1, 1, 1, sh.getLastColumn()).getValues()[0];
   var c = function (name) { return head.indexOf(name); };
-  var iDate = c("Slot date"), iWin = c("Time window"), iBags = c("Total bags"), iPay = c("Payment status"), iDel = c("Delivery status");
+  var iDate = c("Slot date"), iWin = c("Time window"), iBags = c("Total bags"), iPay = c("Payment status"),
+      iDel = c("Delivery status"), iType = c("Order type");
   sh.getRange(2, 1, sh.getLastRow() - 1, head.length).getValues().forEach(function (r) {
     if (r[iPay] === "Cancelled" || r[iDel] === "Cancelled") return;
-    var id = dateText_(r[iDate]) + "|" + timeText_(r[iWin]);
-    used[id] = (used[id] || 0) + (Number(r[iBags]) || 0);
+    var date = dateText_(r[iDate]), win = timeText_(r[iWin]), bags = Number(r[iBags]) || 0;
+    if (iType >= 0 && r[iType] === "Weekly") used.weekly.push({ date: date, win: win, bags: bags });
+    else used.once[date + "|" + win] = (used.once[date + "|" + win] || 0) + bags;
   });
   return used;
+}
+function weekday_(iso) { var p = iso.split("-").map(Number); return new Date(Date.UTC(p[0], p[1] - 1, p[2])).getUTCDay(); }
+
+// Adds any new column headers (e.g. "Order type") to an Orders tab made by an older version
+function ensureHeaders_(sh) {
+  var have = sh.getLastColumn() ? sh.getRange(1, 1, 1, sh.getLastColumn()).getValues()[0] : [];
+  ORDER_HEADERS.forEach(function (h, i) {
+    if (have.indexOf(h) === -1) sh.getRange(1, i + 1).setValue(h).setFontWeight("bold").setFontColor("#ffffff").setBackground("#1e90d6");
+  });
 }
 
 function nextOrderId_() {
@@ -285,14 +308,14 @@ function sendAlert_(s, id, row, slot) {
   if (!to) return;
   var h = ORDER_HEADERS, v = function (name) { return row[h.indexOf(name)]; };
   var when = slot.date + (slot.timeWindow ? " " + slot.timeWindow : "");
-  var subject = "New Ice Drop order #" + id + ": " + v("Total bags") + " bags, ₪" + v("Final price") + " (" + when + ")";
+  var subject = (v("Order type") === "Weekly" ? "New WEEKLY Ice Drop order #" : "New Ice Drop order #") + id + ": " + v("Total bags") + " bags, ₪" + v("Final price") + " (" + when + ")";
   var body = [
-    "Order #" + id,
+    "Order #" + id + " (" + v("Order type") + ")",
     "Delivery: " + when,
     "Name: " + v("Name"), "Phone: " + v("Phone"),
     "Address: " + v("Address") + (v("Apt/Floor") ? ", " + v("Apt/Floor") : ""),
     "Ice: " + (v("Bags qty") ? v("Bags qty") + " bag(s)" : "") + (v("Cooler package") !== "None" ? (v("Bags qty") ? " + " : "") + v("Cooler package") : ""),
-    "Total: " + v("Total bags") + " bags (" + v("Total kg") + " kg), ₪" + v("Final price") + (v("Savings") ? " (saved ₪" + v("Savings") + ")" : ""),
+    "Total: " + v("Total bags") + " bags (" + v("Total kg") + " kg), ₪" + v("Final price") + (v("Order type") === "Weekly" ? " every week" : "") + (v("Savings") ? " (saved ₪" + v("Savings") + ")" : ""),
     "Own cooler: " + v("Own cooler (Y/N)"),
     "Payment: " + v("Payment method") + " (" + v("Payment status") + ")",
     "Notes: " + (v("Notes") || "-"),

@@ -281,6 +281,12 @@ html[dir="rtl"] input[dir="ltr"] { text-align: right; }
 .seg label > span { display: block; text-align: center; padding: .65em .4em; border-radius: 999px; font-weight: 500; color: var(--muted); transition: background .15s, color .15s, box-shadow .15s; }
 .seg input:checked + span { background: var(--white); color: var(--text); box-shadow: 0 1px 4px rgba(5, 24, 43, .16); }
 
+.seg-type input:checked + span { color: var(--text); }
+.dropoff { margin: 10px 0 0; padding: 10px 12px; border-radius: var(--radius-sm); background: var(--mist); color: var(--muted); font-size: .85rem; line-height: 1.5; }
+.dropoff b { color: var(--text); }
+.pause-link { display: block; margin: 10px 0 4px; color: var(--wa-dk); font-size: .88rem; }
+.pr-price small { color: var(--dim); font-size: .78rem; margin-inline-start: 4px; }
+
 .more { margin: -4px 0 16px; }
 .more summary { cursor: pointer; color: var(--blue); font-weight: 500; font-size: .9rem; list-style: none; display: inline-block; }
 .more summary::-webkit-details-marker { display: none; }

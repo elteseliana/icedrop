@@ -310,7 +310,7 @@
     var PER_BAG = 3, MAX = 60;
 
     function layout() {
-      W = canvas.parentNode.clientWidth; H = 210;
+      W = canvas.parentNode.clientWidth || 340; H = 210;
       g = setupCanvas(canvas, W, H);
       var cw = Math.min(W - 40, 320), x0 = (W - cw) / 2;
       geo = { x0: x0, x1: x0 + cw, cw: cw, rim: H - 70, back: H - 150, bottom: H - 8, lidTop: H - 196 };
@@ -418,6 +418,7 @@
       var delay = 0;
       while (have < want) {                    // add cubes
         var sl = slots[have];
+        if (!sl) break;
         var c = newCube(sl.x, instant ? sl.y : -30 - delay, sl.s);
         c.ty = sl.y; c.vy = 0;
         c.trx = rand(-0.5, 0.5); c.try_ = rand(-0.4, 0.4); c.trz = rand(-0.35, 0.35);
@@ -441,7 +442,8 @@
 
     // phones resize the screen while scrolling: only redo it if the width changed
     window.addEventListener("resize", function () {
-      if (canvas.parentNode.clientWidth === W) return;
+      var nw = canvas.parentNode.clientWidth;
+      if (!nw || nw === W) return;                 // hidden (e.g. on the thank-you screen) or same width
       settled = []; falling = []; layout(); set(want / PER_BAG, true);
     });
     layout();

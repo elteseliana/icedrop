@@ -16,7 +16,7 @@
   var S = clone(CFG.fallback);        // settings (replaced by the Sheet's)
   var slots = [];                     // delivery slots from the Sheet
   var slotsState = "loading";         // loading | ok | error
-  var order = { choice: "b2", slotId: "" };   // choice: "b1".."b4" = bags, or a cooler package id
+  var order = { choice: "b2", slotId: "", weekly: false };   // choice: "b1".."b4" = bags, or a cooler package id
   var coolerFx = null;
   var lastOrder = null;
 
@@ -88,6 +88,9 @@
   /* ================= Prices ================= */
   function pkgById(id) { return S.packages.filter(function (p) { return p.id === id; })[0]; }
   function pkgName(id) { return plainT("pkg_" + id); }
+  // Weekly = the prices in the Sheet. One-time = those + the one-time increase (e.g. 20%), whole shekels.
+  function up(price, weekly) { return weekly ? price : Math.round(price * (1 + (S.oneTimeMarkup || 0) / 100)); }
+  function bagPrice(weekly) { return up(S.pricePerBag, weekly); }
   function bestDealId() {
     var best = null;
     S.packages.forEach(function (p) {
@@ -102,11 +105,12 @@
     if (/^b\d+$/.test(order.choice)) bags = Math.min(S.maxBags, parseInt(order.choice.slice(1), 10));
     else pkg = pkgById(order.choice);
     if (!bags && !pkg) { bags = Math.min(2, S.maxBags); order.choice = "b" + bags; }
+    var w = order.weekly, unit = bagPrice(w);
     var totalBags = bags + (pkg ? pkg.bags : 0);
-    var regular = totalBags * S.pricePerBag;
-    var final = bags * S.pricePerBag + (pkg ? pkg.price : 0);
+    var regular = totalBags * unit;
+    var final = bags * unit + (pkg ? up(pkg.price, w) : 0);
     return { bags: bags, cooler: pkg ? pkg.id : "none", totalBags: totalBags, totalKg: totalBags * S.kgPerBag,
-             regular: regular, final: final, savings: regular - final, pkg: pkg };
+             regular: regular, final: final, savings: regular - final, pkg: pkg, weekly: w };
   }
 
   function renderPitch() {
@@ -117,7 +121,7 @@
     $all(".js-our-price").forEach(function (el) { el.textContent = p.ourPrice; });
   }
 
-  // Prices as a simple menu: single bag + cooler packages. Tap a row to order it.
+  // Prices as a simple menu: weekly price + one-time price. Tap a row to order it.
   function renderPrices() {
     var best = bestDealId();
     var list = $("#price-list");
@@ -125,22 +129,19 @@
     var rows = [{ id: "b1", name: plainT("choiceBag1"), bags: 1, price: S.pricePerBag }].concat(
       S.packages.map(function (p) { return { id: p.id, name: pkgName(p.id), bags: p.bags, price: p.price }; }));
     rows.forEach(function (r) {
-      var regular = r.bags * S.pricePerBag, save = regular - r.price;
       var li = document.createElement("li");
       li.className = "price-row" + (r.id === best ? " is-best" : "");
       li.innerHTML = '<button type="button" class="price-btn">' +
         '<span class="pr-name"></span><span class="pr-detail"></span><span class="pr-dots" aria-hidden="true"></span>' +
-        '<span class="pr-price">' + (save > 0 ? '<s dir="ltr"></s>' : "") + '<b dir="ltr"></b></span>' +
-        (save > 0 ? '<span class="pr-save"></span>' : '<span class="pr-save"></span>') + "</button>";
+        '<span class="pr-price"><b dir="ltr"></b><small></small></span>' +
+        '<span class="pr-save"></span></button>';
       li.firstChild.dataset.choice = r.id;
       $(".pr-name", li).textContent = r.name;
       $(".pr-detail", li).textContent = r.bags === 1 ? kgText(S.kgPerBag) + " " + plainT("kg")
         : plainT("pkgDesc", { bags: r.bags, kg: kgText(r.bags * S.kgPerBag) });
       $(".pr-price b", li).textContent = money(r.price);
-      if (save > 0) {
-        $(".pr-price s", li).textContent = money(regular);
-        $(".pr-save", li).textContent = plainT("save", { save: money(save) }) + (r.id === best ? " · " + plainT("bestDeal") : "");
-      }
+      $(".pr-price small", li).textContent = plainT("perWeekShort");
+      $(".pr-save", li).textContent = plainT("oneTimePrice", { price: money(up(r.price, false)) }) + (r.id === best ? " · " + plainT("bestDeal") : "");
       list.appendChild(li);
     });
   }
@@ -155,14 +156,14 @@
     bagRow.className = "ice-row ice-bags";
     for (var n = 1; n <= S.maxBags; n++) {
       bagRow.appendChild(iceOption("b" + n, n === 1 ? plainT("choiceBag1") : plainT("choiceBags", { n: n }),
-        kgText(n * S.kgPerBag) + " " + plainT("kg"), n * S.pricePerBag, 0, false));
+        kgText(n * S.kgPerBag) + " " + plainT("kg"), n * bagPrice(order.weekly), 0, false));
     }
     holder.appendChild(bagRow);
     var pkgRow = document.createElement("div");
     pkgRow.className = "ice-row ice-pkgs";
     S.packages.forEach(function (p) {
       pkgRow.appendChild(iceOption(p.id, pkgName(p.id), kgText(p.bags * S.kgPerBag) + " " + plainT("kg"),
-        p.price, p.bags * S.pricePerBag - p.price, p.id === best));
+        up(p.price, order.weekly), p.bags * bagPrice(order.weekly) - up(p.price, order.weekly), p.id === best));
     });
     holder.appendChild(pkgRow);
   }
@@ -190,8 +191,8 @@
     var show = c.bags === S.maxBags && c.cooler === "none" && next;
     $("#upsell").hidden = !show;
     if (show) {
-      var save = next.bags * S.pricePerBag - next.price;
-      $(".js-upsell-text").innerHTML = t("upsell", { price: money(next.price), save: money(save) });
+      var nextPrice = up(next.price, order.weekly), save = next.bags * bagPrice(order.weekly) - nextPrice;
+      $(".js-upsell-text").innerHTML = t("upsell", { price: money(nextPrice), save: money(save) });
       $("#upsell-btn").dataset.pkg = next.id;
     }
   }
@@ -199,7 +200,7 @@
   var shownKg = 0, kgAnim = null;
   function updateTotals() {
     var c = calc();
-    $("#btn-total").textContent = money(c.final);
+    $("#btn-total").textContent = money(c.final) + (c.weekly ? plainT("perWeek") : "");
     $("#savings-line").textContent = c.savings > 0 ? plainT("savingsLine", { save: money(c.savings), name: pkgName(c.cooler) }) : "";
     $("#bags-count").textContent = c.totalBags === 1 ? plainT("readoutBag1") : plainT("readoutBags", { n: c.totalBags });
     $("#own-cooler-wrap").hidden = c.cooler === "none";
@@ -439,7 +440,10 @@
     return parts.join(" + ") + " (" + T.itemsTotal.replace("{n}", o.totalBags).replace("{kg}", kgText(o.totalKg)) + ")";
   }
   function totalText(o) {
-    return money(o.final) + (o.savings > 0 ? " (" + plainT("save", { save: money(o.savings) }) + ")" : "");
+    return money(o.final) + (o.weekly ? plainT("perWeek") : "") + (o.savings > 0 ? " (" + plainT("save", { save: money(o.savings) }) + ")" : "");
+  }
+  function typeText(o) {
+    return o.weekly ? plainT("typeWeeklyLong", { day: slotDate(o.slot).split(",")[0] }) : plainT("typeOnce");
   }
   function waOrderText(o) {
     var T = TEXTS[lang];
@@ -449,6 +453,7 @@
       T.fPhone + ": " + o.phone,
       T.cAddress + ": " + o.street + (o.apt ? ", " + o.apt : ""),
       T.cDelivery + ": " + slotLabel(o.slot),
+      T.cType + ": " + typeText(o),
       T.cIce + ": " + itemsText(o)
     ];
     if (o.cooler !== "none" && o.ownCooler) lines.push(T.cOwnCooler + ": " + T.cOwnCoolerYes);
@@ -488,6 +493,7 @@
     $("#thanks-title").textContent = plainT("thanksTitle", { id: o.id });
     var rows = [
       [plainT("cDelivery"), slotLabel(o.slot)],
+      [plainT("cType"), typeText(o)],
       [plainT("cIce"), itemsText(o)]
     ];
     if (o.cooler !== "none" && o.ownCooler) rows.push([plainT("cOwnCooler"), plainT("cOwnCoolerYes")]);
@@ -502,7 +508,10 @@
     });
     $("#pay-bit").hidden = o.payment !== "bit";
     $("#pay-cash").hidden = o.payment === "bit";
-    $("#pay-bit-text").innerHTML = t("payBitText", { total: money(o.final), id: o.id });
+    $("#pay-bit-text").innerHTML = t(o.weekly ? "payBitTextWeekly" : "payBitText", { total: money(o.final), id: o.id });
+    var pause = $("#pause-link");
+    pause.hidden = !o.weekly;
+    pause.href = waLink(plainT("waPauseMsg", { id: o.id, name: o.name }));
     $("#pay-cash").innerHTML = t("payCashText", { total: money(o.final) });
     $("#wa-order-btn").href = waLink(waOrderText(o));
   }
@@ -528,6 +537,7 @@
     form.addEventListener("change", function (e) {
       var n = e.target.name;
       if (n === "ice") order.choice = e.target.value;
+      if (n === "orderType") { order.weekly = e.target.value === "weekly"; renderIceChoices(); }
       if (n === "slot") order.slotId = e.target.value;
       if (n === "payment") setError("payment", "");
       updateTotals();
@@ -563,7 +573,8 @@
         name: val("name"), phone: normalizePhone(val("phone")), street: val("street"),
         apt: val("apt"), notes: val("notes"),
         bags: c.bags, cooler: c.cooler, ownCooler: c.cooler !== "none" && !!val("ownCooler"),
-        slotId: order.slotId, payment: val("payment"), website: val("website")
+        slotId: order.slotId, payment: val("payment"), website: val("website"),
+        orderType: order.weekly ? "weekly" : "once"
       };
       sending = true;
       var btn = $("#submit-btn");
@@ -575,9 +586,9 @@
           lastOrder = {
             id: res.orderId, slot: slotById(order.slotId) || res.slot,
             name: payload.name, phone: payload.phone, street: payload.street, apt: payload.apt, notes: payload.notes,
-            bags: c.bags, cooler: c.cooler, ownCooler: payload.ownCooler, payment: payload.payment,
+            bags: c.bags, cooler: c.cooler, ownCooler: payload.ownCooler, payment: payload.payment, weekly: c.weekly,
             totalBags: c.totalBags, totalKg: c.totalKg, regular: c.regular,
-            final: res.price ? res.price.final : c.final, savings: res.price ? res.price.savings : c.savings
+            final: c.final, savings: c.savings
           };
           renderConfirmation(lastOrder);
           $("#order-form-wrap").hidden = true;
@@ -617,7 +628,7 @@
     $("#new-order").addEventListener("click", function () {
       lastOrder = null;
       form.reset();
-      order = { choice: "b2", slotId: "" };
+      order = { choice: "b2", slotId: "", weekly: false };
       $("#thanks").hidden = true;
       $("#order-form-wrap").hidden = false;
       renderAll();

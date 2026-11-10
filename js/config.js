@@ -56,7 +56,8 @@ window.ICE_DROP_CONFIG = {
      Only used in demo mode or if the Sheet can't be reached.
      The real values come from the Sheet's "Settings" tab.          */
   fallback: {
-    pricePerBag: 6,
+    pricePerBag: 6,           // weekly price
+    oneTimeMarkup: 20,        // one-time orders cost 20% more
     kgPerBag: 1.3,
     maxBags: 4,
     packages: [
