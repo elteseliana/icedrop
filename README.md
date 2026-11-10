@@ -64,4 +64,4 @@ After 1–2 minutes it's live at `https://<username>.github.io/<repo-name>/`.
 - The "30% more" headline is calculated from the bag price and kg per bag (Sheet) and the makolet numbers (`js/config.js`).
 - When the page opens, frost creeps in from the screen edges. After an order, 3D ice cubes fall. Both turn off for visitors who ask for "reduce motion".
 - The site remembers each visitor's language (Hebrew / English).
-- Music is Spotify's official player. Nothing is downloaded or hosted.
+- Music: "Ice Ice Baby" (Spotify's official player) starts on the visitor's first tap or click anywhere on the page. Browsers don't allow sound before that. The music button in the header is play/pause, and if someone turns it off, the site remembers. To turn auto-start off, set `autoPlayMusic: false` in `js/config.js`. Visitors who aren't logged in to Spotify hear Spotify's 30-second preview.

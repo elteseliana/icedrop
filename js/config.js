@@ -37,8 +37,12 @@ window.ICE_DROP_CONFIG = {
     zoom: 15
   },
 
-  /* ---------- MUSIC ---------- */
+  /* ---------- MUSIC ----------
+     The song starts on the visitor's first tap/click anywhere on the page
+     (browsers don't allow sound before that). false = only when they
+     press the music button.                                           */
   spotifyEmbedUrl: "https://open.spotify.com/embed/track/11d9oUiwHuYt216EFA2tiz",
+  autoPlayMusic: true,
 
   /* ---------- LANGUAGE ---------- */
   defaultLanguage: "he",   // "he" = Hebrew first, "en" = English first

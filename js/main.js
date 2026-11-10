@@ -641,25 +641,78 @@
   }
 
   /* ================= Music ================= */
+  // Music: Spotify's official player, controlled with its iFrame API.
+  // Browsers never allow sound before the visitor touches the page, so the
+  // song starts on their FIRST tap / click / key press anywhere.
+  // The header button then works as play / pause (and we remember "off").
   function initMusic() {
     var btn = $("#music-btn"), panel = $("#music-panel"), holder = $("#music-frame-holder");
-    function open() {
+    var MUSIC_KEY = "icedrop-music", controller = null, playing = false, wantPlay = false, started = false;
+    var trackId = (String(CFG.spotifyEmbedUrl).match(/track\/([A-Za-z0-9]+)/) || [])[1];
+    var userOff = false;
+    try { userOff = localStorage.getItem(MUSIC_KEY) === "off"; } catch (e) {}
+
+    function show(isPlaying) {
+      playing = isPlaying;
+      btn.classList.toggle("is-playing", isPlaying);
+      btn.setAttribute("aria-pressed", isPlaying ? "true" : "false");
+    }
+    function play() {
+      wantPlay = true;
+      if (!controller) return;                     // will start as soon as the player is ready
+      if (!started) { controller.play(); started = true; } else controller.resume();
+    }
+    function pause() { wantPlay = false; if (controller) controller.pause(); show(false); }
+
+    // Fallback: if Spotify's API can't load, the button just opens the normal player
+    function fallback() {
       if (!holder.querySelector("iframe")) {
         var f = document.createElement("iframe");
-        f.src = CFG.spotifyEmbedUrl;
-        f.width = "100%"; f.height = "152";
+        f.src = CFG.spotifyEmbedUrl; f.width = "100%"; f.height = "152";
         f.setAttribute("frameborder", "0");
         f.setAttribute("allow", "autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture");
-        f.setAttribute("loading", "lazy");
         f.title = "Spotify: Ice Ice Baby";
         holder.appendChild(f);
       }
-      panel.hidden = false;
-      btn.setAttribute("aria-expanded", "true");
+      panel.classList.add("is-open");
     }
-    function close() { panel.hidden = true; btn.setAttribute("aria-expanded", "false"); }
-    btn.addEventListener("click", function () { panel.hidden ? open() : close(); });
-    $("#music-close").addEventListener("click", function () { close(); btn.focus(); });
+
+    window.onSpotifyIframeApiReady = function (IFrameAPI) {
+      var el = document.createElement("div");
+      holder.appendChild(el);
+      IFrameAPI.createController(el, { uri: "spotify:track:" + trackId, width: "100%", height: 152 }, function (c) {
+        controller = c;
+        c.addListener("playback_update", function (e) { if (e && e.data) show(!e.data.isPaused); });
+        c.addListener("ready", function () { if (wantPlay) play(); });
+        if (wantPlay) play();
+      });
+    };
+    if (trackId) {
+      var sc = document.createElement("script");
+      sc.src = "https://open.spotify.com/embed/iframe-api/v1";
+      sc.async = true;
+      sc.onerror = function () { btn.dataset.fallback = "1"; };
+      document.head.appendChild(sc);
+    }
+
+    // First touch anywhere on the page starts the music
+    function firstTouch(e) {
+      if (btn.contains(e.target) || panel.contains(e.target)) return;
+      ["pointerdown", "keydown", "touchend"].forEach(function (ev) { document.removeEventListener(ev, firstTouch, true); });
+      if (CFG.autoPlayMusic !== false && !userOff) play();
+    }
+    ["pointerdown", "keydown", "touchend"].forEach(function (ev) { document.addEventListener(ev, firstTouch, true); });
+
+    btn.addEventListener("click", function () {
+      if (btn.dataset.fallback) {                  // Spotify API didn't load: show the normal player
+        if (panel.classList.contains("is-open")) panel.classList.remove("is-open"); else fallback();
+        return;
+      }
+      if (playing) { pause(); try { localStorage.setItem(MUSIC_KEY, "off"); } catch (e) {} }
+      else { try { localStorage.removeItem(MUSIC_KEY); } catch (e) {} play(); }
+    });
+    $("#music-close").addEventListener("click", function () { panel.classList.remove("is-open"); });
+    setTimeout(function () { if (!controller) btn.dataset.fallback = "1"; }, 10000);
   }
 
   /* ================= Photo ================= */

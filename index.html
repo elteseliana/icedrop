@@ -52,8 +52,9 @@
         <a href="#order" data-t="navOrder">Order</a>
       </nav>
       <div class="header-actions">
-        <button type="button" id="music-btn" class="chip chip-music" aria-expanded="false" aria-controls="music-panel">
+        <button type="button" id="music-btn" class="chip chip-music" aria-pressed="false">
           <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 18V5l11-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="17" cy="16" r="3"/></svg>
+          <span class="eq" aria-hidden="true"><i></i><i></i><i></i></span>
           <span data-t="musicBtn">Ice Ice Baby</span>
         </button>
         <button type="button" id="lang-btn" class="chip chip-lang" lang="en" data-t-label="langToggleLabel">
@@ -61,8 +62,8 @@
         </button>
       </div>
     </div>
-    <!-- Spotify player: hidden until the music button is tapped -->
-    <div id="music-panel" class="music-panel" hidden>
+    <!-- Spotify player: plays in the background (kept off-screen), music button = play/pause -->
+    <div id="music-panel" class="music-panel">
       <div class="wrap music-inner">
         <div id="music-frame-holder" class="music-frame"></div>
         <button type="button" id="music-close" class="music-close" data-t-label="musicClose">✕</button>
