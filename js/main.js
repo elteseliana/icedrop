@@ -654,7 +654,12 @@
     var userOff = false;
     try { userOff = localStorage.getItem(MUSIC_KEY) === "off"; } catch (e) {}
 
+    var panel = $("#music-panel"), dockTimer = null;
+    function dock(open) {                          // the small music bar at the bottom
+      panel.classList.toggle("is-dock", open);
+    }
     function show(on) {
+      if (on && panel.classList.contains("is-dock")) { clearTimeout(dockTimer); dockTimer = setTimeout(function () { dock(false); }, 1800); }
       playing = on;
       btn.classList.toggle("is-playing", on);
       btn.setAttribute("aria-pressed", on ? "true" : "false");
@@ -682,7 +687,7 @@
       window.onSpotifyIframeApiReady = function (api) {
         var el = document.createElement("div");
         $("#music-frame-holder").appendChild(el);
-        api.createController(el, { uri: "spotify:track:" + id, width: 300, height: 80 }, function (c) {
+        api.createController(el, { uri: "spotify:track:" + id, width: "100%", height: 80 }, function (c) {
           spotify = c;
           c.addListener("playback_update", function (e) { if (e && e.data) show(!e.data.isPaused); });
           if (wantPlay) play();
@@ -710,6 +715,8 @@
             onStateChange: function (e) { show(e.data === 1 || e.data === 3); },  // 1 playing, 3 buffering
             onError: function (e) {
               lastError = e.data;
+              var yt = $("#yt-player");
+              if (yt) yt.style.display = "none";              // hide the blocked YouTube player
               console.warn("Ice Drop: YouTube can't play this video here (error " + e.data + "), switching to Spotify");
               useSpotify();
             }
@@ -722,10 +729,20 @@
       document.head.appendChild(sc);
     }
 
-    music.start = function () { if (CFG.autoPlayMusic !== false && !userOff) play(); };
+    music.start = function () {
+      if (CFG.autoPlayMusic === false || userOff) return;
+      play();
+      // phones often block music that isn't started by a tap on the player itself:
+      // if it hasn't started after 2.5 s, show the little music bar
+      setTimeout(function () { if (!playing) dock(true); }, 2500);
+    };
+    $("#music-close").addEventListener("click", function () { dock(false); });
     btn.addEventListener("click", function () {
-      if (playing) { pause(); try { localStorage.setItem(MUSIC_KEY, "off"); } catch (e) {} }
-      else { userOff = false; try { localStorage.removeItem(MUSIC_KEY); } catch (e) {} play(); }
+      if (playing) { pause(); try { localStorage.setItem(MUSIC_KEY, "off"); } catch (e) {} return; }
+      userOff = false;
+      try { localStorage.removeItem(MUSIC_KEY); } catch (e) {}
+      play();
+      if (!audio) setTimeout(function () { if (!playing) dock(true); }, 1200);
     });
     window.__iceMusic = function () { return { ready: ready, playing: playing, error: lastError, spotify: !!spotify, state: player && player.getPlayerState ? player.getPlayerState() : null }; };
   }

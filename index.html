@@ -50,9 +50,12 @@
   <a class="skip-link" href="#order" data-t="skipToForm">Skip to order form</a>
 
   <!-- music player: invisible, plays in the background -->
-  <div id="music-panel" class="music-panel" aria-hidden="true">
+  <!-- If music can't start by itself (phones), this becomes a small bar at the bottom:
+       one tap on its play button starts the song -->
+  <div id="music-panel" class="music-panel">
+    <p class="dock-label" data-t="dockLabel"></p>
     <div id="music-frame-holder" class="music-frame"><div id="yt-player"></div></div>
-    <button type="button" id="music-close" class="music-close" tabindex="-1">✕</button>
+    <button type="button" id="music-close" class="music-close" data-t-label="musicClose">✕</button>
   </div>
 
   <!-- ===== Animations (decoration only) ===== -->
