@@ -10,18 +10,20 @@
 
 window.ICE_DROP_TEXTS = {
   en: {
+    statusWeeklyBit: "Bit · weekly payment request",
+    deliveriesLabel: "Deliveries:",
     waPauseMsg: "Hi Ice Drop! I'd like to pause/cancel my weekly order #{id}. My name is {name}.",
-    pauseLink: "Pause or cancel your weekly order anytime on WhatsApp",
-    payBitTextWeekly: "Please send <b>{total}</b> each week by Bit or PayBox to the number below, and put <b>order #{id}</b> in the payment note.",
+    pauseLink: "Pause or cancel your membership anytime on WhatsApp",
+    payBitTextWeekly: "Each week, before your delivery, you'll get a Bit payment request for <b>{total}</b> from the number below. Just approve it in Bit.",
     dropoff: "<b>No-contact drop-off.</b> We knock, leave your ice at the door and go. Just be home in your delivery window so it goes straight into the freezer.",
     cType: "Order",
     perWeek: " / week",
     typeWeeklyLong: "Weekly, every {day}",
-    typeWeekly: "Weekly · best price",
+    typeWeekly: "Weekly · member price",
     typeOnce: "One-time",
     fType: "How often?",
     oneTimePrice: "{price} one-time",
-    perWeekShort: "weekly",
+    perWeekShort: "members",
     fact1: "Made fresh at home",
     fact2: "Free delivery",
     fact3: "No-contact drop-off",
@@ -60,7 +62,7 @@ window.ICE_DROP_TEXTS = {
 
 
     pricesTitle: "Prices",
-    pricesSub: "Order weekly for the best price. One-time orders cost a little more. Delivery is always free.",
+    pricesSub: "Weekly members get the member price. One-time orders cost a little more. Delivery is always free.",
     pkg_quarter: "¼ cooler",
     pkg_half: "½ cooler",
     pkg_full: "Full cooler",
@@ -139,18 +141,20 @@ window.ICE_DROP_TEXTS = {
   },
 
   he: {
+    statusWeeklyBit: "ביט · בקשת תשלום שבועית",
+    deliveriesLabel: "משלוחים:",
     waPauseMsg: "היי Ice Drop! אני רוצה להשהות/לבטל את ההזמנה השבועית #{id}. השם שלי {name}.",
-    pauseLink: "אפשר להשהות או לבטל את ההזמנה השבועית מתי שרוצים בוואטסאפ",
-    payBitTextWeekly: "בבקשה שלחו <b>{total}</b> כל שבוע בביט או בפייבוקס למספר למטה, וכתבו <b>הזמנה #{id}</b> בהערת התשלום.",
+    pauseLink: "אפשר להשהות או לבטל את המנוי מתי שרוצים בוואטסאפ",
+    payBitTextWeekly: "בכל שבוע, לפני המשלוח, תקבלו בקשת תשלום בביט על <b>{total}</b> מהמספר למטה. רק לאשר בביט.",
     dropoff: "<b>מסירה בלי מגע.</b> אנחנו דופקים בדלת, משאירים את הקרח וממשיכים. רק תהיו בבית בזמן המשלוח כדי שהקרח ייכנס ישר למקפיא.",
     cType: "הזמנה",
     perWeek: " לשבוע",
     typeWeeklyLong: "כל שבוע, ב{day}",
-    typeWeekly: "כל שבוע · הכי משתלם",
+    typeWeekly: "שבועי · מחיר מנוי",
     typeOnce: "חד-פעמי",
     fType: "באיזו תדירות?",
     oneTimePrice: "{price} חד-פעמי",
-    perWeekShort: "בשבוע",
+    perWeekShort: "למנויים",
     fact1: "מוכן טרי בבית",
     fact2: "משלוח חינם",
     fact3: "מסירה בלי מגע",
@@ -189,7 +193,7 @@ window.ICE_DROP_TEXTS = {
 
 
     pricesTitle: "מחירים",
-    pricesSub: "הזמנה שבועית היא הכי משתלמת. הזמנה חד-פעמית עולה קצת יותר. המשלוח תמיד חינם.",
+    pricesSub: "מנויים שבועיים מקבלים מחיר מנוי. הזמנה חד-פעמית עולה קצת יותר. המשלוח תמיד חינם.",
     pkg_quarter: "¼ צידנית",
     pkg_half: "½ צידנית",
     pkg_full: "צידנית מלאה",

@@ -171,7 +171,10 @@ html[dir="rtl"] .btn-link::after { content: " ←"; }
 .hero-facts li { display: flex; align-items: center; gap: 8px; }
 .hero-facts li::before { content: ""; width: 6px; height: 6px; border-radius: 50%; background: var(--ice); box-shadow: 0 0 10px var(--ice); }
 
-.countdown { display: inline-flex; align-items: center; gap: 10px; margin: 30px 0 0; font-size: .88rem; color: var(--dim); }
+.delivery-days { margin: 22px 0 0; color: var(--dim); font-size: .92rem; }
+.delivery-days b { color: var(--on-dark); font-weight: 500; margin-inline-end: 4px; }
+
+.countdown { display: inline-flex; align-items: center; gap: 10px; margin: 12px 0 0; font-size: .88rem; color: var(--dim); }
 .countdown b { color: var(--on-dark); font-variant-numeric: tabular-nums; font-weight: 500; }
 .countdown .icon { color: var(--ice); }
 

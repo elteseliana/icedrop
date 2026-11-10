@@ -30,6 +30,7 @@ If you change the script later: **Deploy → Manage deployments → ✏️ → V
 ## 2. Running the business from the Sheet
 
 **Slots tab: delivery days**
+- The days listed under **Delivery days** in Settings (Monday, Friday) are added by themselves for this week and next week. Just type the **Time window**. The website shows this week + next week only.
 - One row per delivery: **Date**, optional **Time window** (e.g. `16:00-18:00`), **Capacity (bags)** (empty = the default, 30), **Open** (tick = open).
 - Day name fills in by itself.
 - A day disappears from the site when: Open is unticked, or it's past the cutoff (default **20:00 the night before**).
@@ -43,7 +44,9 @@ If you change the script later: **Deploy → Manage deployments → ✏️ → V
 - Colors: yellow = awaiting payment, green = delivered, grey = cancelled.
 - Each new order also sends an email (to the Sheet owner, or to the "Alert email" in Settings).
 
-**Settings tab**: change the value in column B. Don't change the names in column A.
+**Weekly payments tab**: every week each weekly customer gets a row (date, name, phone, amount). Send them a Bit payment request from the Bit app, tick **Bit request sent**, then **Paid** when it arrives. Rows for this week and next week appear by themselves when you open the Sheet (menu **Ice Drop → Refresh**).
+
+**Settings tab**: change the value in column B. Don't change the names in column A. One-time orders cost **One-time price increase (%)** more than the weekly (member) prices.
 
 ## 3. Put it online with GitHub Pages (free)
 

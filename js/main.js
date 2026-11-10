@@ -79,6 +79,7 @@
     renderPrices();
     renderIceChoices();
     renderSlots();
+    renderDeliveryDays();
     updateTotals();
     updateCountdown();
     renderContact();
@@ -173,7 +174,7 @@
     lab.innerHTML = '<input type="radio" name="ice"><span class="ice-body">' +
       (best ? '<span class="best-badge"></span>' : "") +
       '<b class="ice-name"></b><small class="ice-kg"></small>' +
-      '<span class="ice-price">' + (save > 0 ? '<s dir="ltr"></s> ' : "") + '<b dir="ltr"></b></span></span>';
+      '<span class="ice-price"><b dir="ltr"></b></span></span>';
     var input = $("input", lab);
     input.value = value;
     input.checked = value === order.choice;
@@ -181,7 +182,6 @@
     $(".ice-name", lab).textContent = name;
     $(".ice-kg", lab).textContent = kg;
     $(".ice-price b", lab).textContent = money(price);
-    if (save > 0) $(".ice-price s", lab).textContent = money(price + save);
     return lab;
   }
 
@@ -287,15 +287,39 @@
   }
 
   function demoSlots() {
-    var out = [], d = new Date();
-    for (var i = 2; out.length < 3 && i < 30; i++) {
+    var out = [], d = new Date(), end = 6 - d.getDay() + 7;          // until the end of next week
+    for (var i = 1; i <= end; i++) {
       var day = new Date(d.getFullYear(), d.getMonth(), d.getDate() + i);
-      if (day.getDay() !== 5) continue;
+      if (day.getDay() !== 1 && day.getDay() !== 5) continue;          // Mondays and Fridays
       var iso = day.getFullYear() + "-" + ("0" + (day.getMonth() + 1)).slice(-2) + "-" + ("0" + day.getDate()).slice(-2);
-      var rem = out.length === 1 ? 6 : 30;
-      out.push({ id: iso + "|13:30-15:00", date: iso, timeWindow: "13:30-15:00", capacity: 30, remaining: rem, soldOut: false });
+      var win = day.getDay() === 1 ? "16:00-18:00" : "13:30-15:00";
+      out.push({ id: iso + "|" + win, date: iso, timeWindow: win, capacity: 30, remaining: 30, soldOut: false });
     }
     return out;
+  }
+
+  // "Deliveries: Mon 16:00–18:00 · Fri 13:30–15:00", worked out from the Sheet's delivery days
+  function renderDeliveryDays() {
+    var el = $(".js-delivery-days");
+    if (!el) return;
+    var seen = {}, parts = [];
+    slots.forEach(function (sl) {
+      var p = sl.date.split("-").map(Number);
+      var d = new Date(Date.UTC(p[0], p[1] - 1, p[2], 12));
+      var name = new Intl.DateTimeFormat(lang === "he" ? "he-IL" : "en-US", { weekday: "long", timeZone: "UTC" }).format(d);
+      var key = d.getUTCDay() + "|" + sl.timeWindow;
+      if (seen[key]) return;
+      seen[key] = true;
+      parts.push({ k: d.getUTCDay(), text: name + (sl.timeWindow ? " \u2066" + sl.timeWindow.replace("-", "\u2013") + "\u2069" : "") });
+    });
+    parts.sort(function (a, b) { return a.k - b.k; });
+    el.hidden = !parts.length;
+    el.innerHTML = "";
+    if (!parts.length) return;
+    var label = document.createElement("b");
+    label.textContent = plainT("deliveriesLabel");
+    el.appendChild(label);
+    el.appendChild(document.createTextNode(" " + parts.map(function (x) { return x.text; }).join(" · ")));
   }
 
   function loadFromSheet() {
@@ -458,7 +482,7 @@
     ];
     if (o.cooler !== "none" && o.ownCooler) lines.push(T.cOwnCooler + ": " + T.cOwnCoolerYes);
     lines.push(T.cTotal + ": " + totalText(o));
-    lines.push(T.cPayment + ": " + (o.payment === "bit" ? T.statusAwaiting : T.statusCash));
+    lines.push(T.cPayment + ": " + (o.payment === "bit" ? (o.weekly ? T.statusWeeklyBit : T.statusAwaiting) : T.statusCash));
     if (o.notes) lines.push(T.fNotes + ": " + o.notes);
     return lines.join("\n");
   }
@@ -498,7 +522,7 @@
     ];
     if (o.cooler !== "none" && o.ownCooler) rows.push([plainT("cOwnCooler"), plainT("cOwnCoolerYes")]);
     rows.push([plainT("cTotal"), totalText(o)]);
-    rows.push([plainT("cPayment"), plainT(o.payment === "bit" ? "statusAwaiting" : "statusCash")]);
+    rows.push([plainT("cPayment"), plainT(o.payment === "bit" ? (o.weekly ? "statusWeeklyBit" : "statusAwaiting") : "statusCash")]);
     var dl = $("#confirm-list");
     dl.innerHTML = "";
     rows.forEach(function (r) {

@@ -28,6 +28,8 @@ var TZ = "Asia/Jerusalem";
 var TAB_ORDERS = "Orders";
 var TAB_SLOTS = "Slots";
 var TAB_SETTINGS = "Settings";
+var TAB_PAYMENTS = "Weekly payments";
+var PAYMENT_HEADERS = ["Delivery date", "Order ID", "Name", "Phone", "Amount (₪)", "Pays with", "Bit request sent", "Paid"];
 
 var ORDER_HEADERS = [
   "Timestamp", "Order ID", "Language", "Name", "Phone", "Address", "Apt/Floor", "Notes",
@@ -55,6 +57,8 @@ var SETTINGS = [
   ["WhatsApp number",            "058-590-9980", "Gets the WhatsApp order summaries"],
   ["Order cutoff time",          "20:00", "Orders close at this time the night before each delivery day"],
   ["Default capacity (bags)",    30,  "Used when a slot's Capacity is empty"],
+  ["Delivery days",              "Monday, Friday", "The Slots tab adds these days by itself for this week + next week. Then just type the time. Empty = add days by hand."],
+  ["Weeks shown on site",        2,   "How many weeks of delivery days the website shows (2 = this week and next week)"],
   ["Alert email",                "",  "Who gets an email per order (empty = the sheet owner)"]
 ];
 
@@ -127,6 +131,7 @@ function setup() {
 function doGet(e) {
   try {
     var settings = readSettings_();
+    try { fillUpcomingSlots_(settings); } catch (fillErr) { console.error(fillErr); }   // never block the website
     return json_({ ok: true, settings: publicSettings_(settings), slots: listSlots_(settings) });
   } catch (err) {
     return json_({ ok: false, error: String(err) });
@@ -174,6 +179,7 @@ function doPost(e) {
     sheet.appendRow(row);
 
     try { sendAlert_(settings, id, row, slot); } catch (mailErr) { console.error(mailErr); }
+    if (weekly) { try { refreshWeeklyPayments_(settings); } catch (payErr) { console.error(payErr); } }
 
     return json_({
       ok: true, orderId: id, paymentStatus: payStatus,
@@ -213,6 +219,8 @@ function readSettings_() {
     whatsappNumber: String(s["WhatsApp number"]),
     cutoff: timeText_(s["Order cutoff time"]) || "20:00",
     defaultCapacity: num("Default capacity (bags)"),
+    deliveryDays: dayNumbers_(s["Delivery days"]),
+    weeksShown: Math.max(1, num("Weeks shown on site") || 2),
     alertEmail: String(s["Alert email"] || "")
   };
 }
@@ -246,11 +254,12 @@ function listSlots_(s) {
   var sh = ss.getSheetByName(TAB_SLOTS);
   if (!sh || sh.getLastRow() < 2) return [];
   var now = Utilities.formatDate(new Date(), TZ, "yyyy-MM-dd HH:mm");
+  var last = lastShownDate_(s);
   var used = bagsUsed_();
   var out = [];
   sh.getRange(2, 1, sh.getLastRow() - 1, 5).getValues().forEach(function (r) {
     var date = dateText_(r[0]);
-    if (!date) return;
+    if (!date || date > last) return;                                  // only this week + next week
     var open = r[4] === true || String(r[4]).toUpperCase() === "TRUE";
     if (!open) return;
     var cutoff = shiftDate_(date, -1) + " " + s.cutoff;               // e.g. the night before at 20:00
@@ -294,6 +303,91 @@ function ensureHeaders_(sh) {
   ORDER_HEADERS.forEach(function (h, i) {
     if (have.indexOf(h) === -1) sh.getRange(1, i + 1).setValue(h).setFontWeight("bold").setFontColor("#ffffff").setBackground("#1e90d6");
   });
+}
+
+/* ---------- Delivery days: this week + next week fill themselves in ---------- */
+var DAY_NAMES = { sunday: 0, monday: 1, tuesday: 2, wednesday: 3, thursday: 4, friday: 5, saturday: 6,
+                  "ראשון": 0, "שני": 1, "שלישי": 2, "רביעי": 3, "חמישי": 4, "שישי": 5, "שבת": 6 };
+function dayNumbers_(text) {
+  var out = [];
+  String(text || "").split(/[,;\/]+/).forEach(function (w) {
+    var k = w.trim().toLowerCase().replace(/^יום\s+/, "");
+    if (k in DAY_NAMES) out.push(DAY_NAMES[k]);
+  });
+  return out;
+}
+function todayIso_() { return Utilities.formatDate(new Date(), TZ, "yyyy-MM-dd"); }
+// last day the site shows: the Saturday at the end of next week (with "Weeks shown on site" = 2)
+function lastShownDate_(s) {
+  var today = todayIso_();
+  return shiftDate_(today, (6 - weekday_(today)) + 7 * (s.weeksShown - 1));
+}
+// Adds a row for every delivery day (e.g. Monday + Friday) that's missing, for this week + next week.
+// The time window is left empty for you to type in.
+function fillUpcomingSlots_(s) {
+  if (!s.deliveryDays.length) return 0;
+  var sh = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(TAB_SLOTS);
+  if (!sh) return 0;
+  var lock = LockService.getScriptLock();
+  if (!lock.tryLock(5000)) return 0;
+  try {
+    var have = {};
+    if (sh.getLastRow() > 1) sh.getRange(2, 1, sh.getLastRow() - 1, 1).getValues().forEach(function (r) { have[dateText_(r[0])] = true; });
+    var today = todayIso_(), last = lastShownDate_(s), added = 0;
+    for (var d = today; d <= last; d = shiftDate_(d, 1)) {
+      if (s.deliveryDays.indexOf(weekday_(d)) === -1 || have[d]) continue;
+      sh.appendRow([parseIsoDate_(d), "", "", "", true]);
+      sh.getRange(sh.getLastRow(), 5).insertCheckboxes().setValue(true);
+      added++;
+    }
+    return added;
+  } finally { lock.releaseLock(); }
+}
+
+/* ---------- Weekly payments: who to send a Bit request to each week ---------- */
+function refreshWeeklyPayments_(s) {
+  var ss = SpreadsheetApp.getActiveSpreadsheet();
+  var pay = ss.getSheetByName(TAB_PAYMENTS);
+  if (!pay) {
+    pay = ss.insertSheet(TAB_PAYMENTS);
+    pay.getRange(1, 1, 1, PAYMENT_HEADERS.length).setValues([PAYMENT_HEADERS]);
+    styleHeader_(pay, PAYMENT_HEADERS.length, "#0b3d66");
+    pay.setFrozenRows(1);
+  }
+  var orders = ss.getSheetByName(TAB_ORDERS);
+  if (!orders || orders.getLastRow() < 2) return 0;
+  var head = orders.getRange(1, 1, 1, orders.getLastColumn()).getValues()[0];
+  var c = function (n) { return head.indexOf(n); };
+  var have = {};
+  if (pay.getLastRow() > 1) pay.getRange(2, 1, pay.getLastRow() - 1, 2).getValues().forEach(function (r) { have[dateText_(r[0]) + "|" + r[1]] = true; });
+  var today = todayIso_(), last = lastShownDate_(s), added = 0;
+  orders.getRange(2, 1, orders.getLastRow() - 1, head.length).getValues().forEach(function (r) {
+    if (c("Order type") < 0 || r[c("Order type")] !== "Weekly") return;
+    if (r[c("Payment status")] === "Cancelled" || r[c("Delivery status")] === "Cancelled") return;
+    var start = dateText_(r[c("Slot date")]);
+    for (var d = start; d <= last; d = shiftDate_(d, 7)) {
+      if (d < today || have[d + "|" + r[c("Order ID")]]) continue;
+      pay.appendRow([parseIsoDate_(d), String(r[c("Order ID")]), r[c("Name")], r[c("Phone")], r[c("Final price")], r[c("Payment method")], false, false]);
+      pay.getRange(pay.getLastRow(), 7, 1, 2).insertCheckboxes();
+      added++;
+    }
+  });
+  return added;
+}
+
+/* ---------- When you open the Sheet ---------- */
+function onOpen() {
+  try {
+    SpreadsheetApp.getUi().createMenu("Ice Drop")
+      .addItem("Refresh delivery days + weekly payments", "refreshAll")
+      .addToUi();
+  } catch (e) {}
+  refreshAll();
+}
+function refreshAll() {
+  var s = readSettings_();
+  fillUpcomingSlots_(s);
+  refreshWeeklyPayments_(s);
 }
 
 function nextOrderId_() {
