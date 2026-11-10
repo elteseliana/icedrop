@@ -30,23 +30,7 @@
 
   <link rel="stylesheet" href="css/style.css">
 </head>
-<body class="is-gated">
-  <!-- ===== Opening screen: the tap starts the music and the frost ===== -->
-  <div id="gate" class="gate" role="dialog" aria-modal="true" aria-labelledby="gate-name">
-    <button type="button" class="gate-lang" id="gate-lang" data-t="langToggle">English</button>
-    <div class="gate-inner">
-      <img src="assets/img/cube-hero.webp" alt="" class="gate-cube" width="552" height="502">
-      <p class="gate-name" id="gate-name" dir="ltr" lang="en">ICE DROP</p>
-      <button type="button" class="gate-btn" id="gate-btn">
-        <span data-t="gateEnter">Tap to enter</span>
-      </button>
-      <p class="gate-sound">
-        <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M11 5L6 9H3v6h3l5 4V5z"/><path d="M15.5 8.5a5 5 0 0 1 0 7M18.5 5.5a9 9 0 0 1 0 13"/></svg>
-        <span data-t="gateSound">Sound on</span>
-      </p>
-    </div>
-  </div>
-
+<body>
   <a class="skip-link" href="#order" data-t="skipToForm">Skip to order form</a>
 
   <!-- music player: invisible, plays in the background -->
@@ -72,7 +56,6 @@
         <span class="logo-name">ICE DROP</span>
       </a>
       <nav class="nav" aria-label="Main">
-        <a href="#story" data-t="navWhy">Why us</a>
         <a href="#prices" data-t="navPrices">Prices</a>
         <a href="#area" data-t="navArea">Area</a>
       </nav>
@@ -103,6 +86,11 @@
             <a href="#order" class="btn btn-ice btn-big" data-t="heroCta">Order ice</a>
             <a href="#prices" class="btn-link" data-t="heroCta2">See prices</a>
           </div>
+          <ul class="hero-facts" data-reveal>
+            <li data-t="fact1"></li>
+            <li data-t="fact2"></li>
+            <li data-t="fact3"></li>
+          </ul>
           <p class="countdown js-countdown" hidden>
             <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="13" r="8"/><path d="M12 9v4l2.5 2M9 2h6"/></svg>
             <span class="js-countdown-text"></span>
@@ -112,52 +100,6 @@
           <div class="hero-glow"></div>
           <div class="hero-cube-wrap" id="hero-cube"><img src="assets/img/cube-hero.webp" alt="" width="552" height="502" fetchpriority="high"></div>
         </div>
-      </div>
-      <a href="#math" class="scroll-hint" aria-hidden="true" tabindex="-1"><span></span></a>
-    </section>
-
-    <!-- ===== The math (scroll-driven) ===== -->
-    <section class="math" id="math">
-      <div class="math-sticky">
-        <div class="wrap">
-          <p class="eyebrow" data-t="mathEyebrow"></p>
-          <h2 class="math-title" data-t="mathTitle"></h2>
-          <div class="bars">
-            <div class="bar-row">
-              <span class="bar-label" data-t="cmpMakolet"></span>
-              <div class="bar"><i class="bar-fill bar-them"></i></div>
-              <span class="bar-val"><b class="js-mk-kg" dir="ltr"></b> <span data-t="kg"></span> · <span class="js-mk-price" dir="ltr"></span></span>
-            </div>
-            <div class="bar-row is-us">
-              <span class="bar-label" dir="ltr" lang="en">Ice Drop</span>
-              <div class="bar"><i class="bar-fill bar-us"></i></div>
-              <span class="bar-val"><b class="js-our-kg-live" dir="ltr"></b> <span data-t="kg"></span> · <span class="js-our-price" dir="ltr"></span></span>
-            </div>
-          </div>
-          <p class="math-foot" data-t="mathFoot"></p>
-        </div>
-      </div>
-    </section>
-
-    <!-- ===== Story panels ===== -->
-    <section class="story" id="story">
-      <div class="wrap">
-        <article class="panel" data-reveal>
-          <figure class="panel-img" data-parallax><img src="assets/img/ice-bag.jpg" alt="" width="511" height="501" loading="lazy"></figure>
-          <div class="panel-text">
-            <p class="eyebrow" data-t="fresh1Eyebrow"></p>
-            <h2 class="panel-title" data-t="fresh1Title"></h2>
-            <p data-t="fresh1Text"></p>
-          </div>
-        </article>
-        <article class="panel panel-flip" data-reveal>
-          <figure class="panel-img" data-parallax><img src="assets/img/ice-cubes.jpg" alt="" width="510" height="496" loading="lazy"></figure>
-          <div class="panel-text">
-            <p class="eyebrow" data-t="fresh2Eyebrow"></p>
-            <h2 class="panel-title" data-t="fresh2Title"></h2>
-            <p data-t="fresh2Text"></p>
-          </div>
-        </article>
       </div>
     </section>
 

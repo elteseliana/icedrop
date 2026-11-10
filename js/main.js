@@ -115,7 +115,6 @@
     $all(".js-mk-price").forEach(function (el) { el.textContent = p.mkPrice; });
     $all(".js-our-kg").forEach(function (el) { el.textContent = p.ourKg; });
     $all(".js-our-price").forEach(function (el) { el.textContent = p.ourPrice; });
-    $all(".js-our-kg-live").forEach(function (el) { if (!el.textContent) el.textContent = p.mkKg; });
   }
 
   // Prices as a simple menu: single bag + cooler packages. Tap a row to order it.
@@ -747,25 +746,17 @@
     window.__iceMusic = function () { return { ready: ready, playing: playing, error: lastError, spotify: !!spotify, state: player && player.getPlayerState ? player.getPlayerState() : null }; };
   }
 
-  /* ================= Opening screen ("Tap to enter") ================= */
-  function initGate() {
-    var gate = $("#gate");
-    if (!gate) return;
-    var gone = false;
-    function enter(e) {
-      if (gone || (e && e.target.closest("#gate-lang"))) return;
-      gone = true;
-      music.start();                               // must happen inside the tap
-      gate.classList.add("is-leaving");
-      document.body.classList.remove("is-gated");
-      setTimeout(function () { gate.remove(); }, FX.reducedMotion() ? 0 : 900);
-      setTimeout(function () { FX.frostIn(); }, FX.reducedMotion() ? 0 : 250);
-      document.body.classList.add("is-in");
+  /* ================= Music on the first tap =================
+     Browsers only allow sound after the visitor touches the page, so the
+     song starts on their first tap / click / key press anywhere.       */
+  function initFirstTap() {
+    var evs = ["pointerdown", "touchend", "keydown"];
+    function first(e) {
+      if (e.target.closest && e.target.closest("#music-btn, #music-panel")) return;  // those handle themselves
+      evs.forEach(function (ev) { document.removeEventListener(ev, first, true); });
+      music.start();
     }
-    gate.addEventListener("click", enter);
-    gate.addEventListener("keydown", function (e) { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); enter(e); } });
-    $("#gate-lang").addEventListener("click", function () { switchLang(); });
-    setTimeout(function () { var b = $("#gate-btn"); if (b) b.focus({ preventScroll: true }); }, 50);
+    evs.forEach(function (ev) { document.addEventListener(ev, first, true); });
   }
 
   /* ================= Scroll effects ================= */
@@ -780,43 +771,19 @@
       items.forEach(function (el) { io.observe(el); });
     }
 
-    var header = $(".site-header"), hero = $(".hero"), cube = $("#hero-cube"), math = $("#math");
-    var barThem = $(".bar-them"), barUs = $(".bar-us"), liveKg = $all(".js-our-kg-live");
-    var panels = $all("[data-parallax] img");
+    var header = $(".site-header"), hero = $(".hero"), cube = $("#hero-cube");
     var ticking = false;
     function clamp(v) { return Math.max(0, Math.min(1, v)); }
-    function ease(t) { return 1 - Math.pow(1 - t, 3); }
 
     function update() {
       ticking = false;
       var y = window.scrollY, vh = window.innerHeight;
       header.classList.toggle("is-solid", y > 40);
-      var p = pitch(), mk = parseFloat(p.mkKg), ours = parseFloat(p.ourKg);
-      if (reduced) {
-        barThem.style.transform = "scaleX(" + (mk / ours) + ")";
-        barUs.style.transform = "scaleX(1)";
-        liveKg.forEach(function (el) { el.textContent = p.ourKg; });
-        return;
-      }
-      // hero: the cube "drops" as you scroll
+      if (reduced || !cube) return;
+      // the hero cube "drops" a little as you scroll
       var hp = clamp(y / (hero.offsetHeight * 0.9));
-      cube.style.transform = "translateY(" + (hp * vh * 0.55) + "px) rotate(" + (hp * 38) + "deg) scale(" + (1 - hp * 0.25) + ")";
+      cube.style.transform = "translateY(" + (hp * vh * 0.4) + "px) rotate(" + (hp * 30) + "deg) scale(" + (1 - hp * 0.2) + ")";
       cube.style.opacity = String(1 - hp * 0.6);
-      // the math: bars grow while the section is pinned
-      var r = math.getBoundingClientRect();
-      var mp = clamp(-r.top / Math.max(1, r.height - vh));
-      var grow = ease(clamp(mp * 1.6));
-      barThem.style.transform = "scaleX(" + (mk / ours) * ease(clamp(mp * 2.4)) + ")";
-      barUs.style.transform = "scaleX(" + grow + ")";
-      var kgNow = mk + (ours - mk) * ease(clamp((mp - 0.25) * 2));
-      liveKg.forEach(function (el) { el.textContent = (Math.round(kgNow * 10) / 10).toFixed(1); });
-      math.classList.toggle("is-done", mp > 0.75);
-      // photos move a little slower than the page
-      panels.forEach(function (img) {
-        var b = img.parentNode.getBoundingClientRect();
-        var off = (b.top + b.height / 2 - vh / 2) / vh;
-        img.style.transform = "translateY(" + (off * -40) + "px) scale(1.12)";
-      });
     }
     window.addEventListener("scroll", function () { if (!ticking) { ticking = true; requestAnimationFrame(update); } }, { passive: true });
     window.addEventListener("resize", update);
@@ -837,7 +804,7 @@
     initForm();
     renderAll();
     initMusic();
-    initGate();
+    initFirstTap();
     initScrollFx();
     try { initMap(); } catch (e) { console.warn("Ice Drop: map failed", e); }
     $("#year").textContent = new Date().getFullYear();
@@ -855,6 +822,12 @@
       updateTotals();
       $("#order").scrollIntoView({ behavior: FX.reducedMotion() ? "auto" : "smooth" });
     });
+
+    // frost creeps over the screen when the page opens, then clears
+    var frostStarted = false;
+    function startFrost() { if (!frostStarted) { frostStarted = true; FX.frostIn(); } }
+    if (document.readyState === "complete") startFrost();
+    else { window.addEventListener("load", startFrost); setTimeout(startFrost, 1200); }
   }
 
   if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", start);
