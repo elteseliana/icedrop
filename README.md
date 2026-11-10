@@ -30,7 +30,8 @@ If you change the script later: **Deploy → Manage deployments → ✏️ → V
 ## 2. Running the business from the Sheet
 
 **Slots tab: delivery days**
-- The days listed under **Delivery days** in Settings (Monday, Friday) are added by themselves for this week and next week. Just type the **Time window**. The website shows this week + next week only.
+- The days listed under **Delivery days** in Settings (Monday, Friday) are added by themselves for this week and next week, with the time from **Monday delivery time** / **Friday delivery time** (16:15-17:30 and 13:30-15:00). The website shows this week + next week only.
+- Each day closes for orders at its **order cutoff** in Settings: Friday closes **Friday 09:00**, Monday closes **Sunday 20:00**.
 - One row per delivery: **Date**, optional **Time window** (e.g. `16:00-18:00`), **Capacity (bags)** (empty = the default, 30), **Open** (tick = open).
 - Day name fills in by itself.
 - A day disappears from the site when: Open is unticked, or it's past the cutoff (default **20:00 the night before**).
@@ -58,7 +59,7 @@ After 1–2 minutes it's live at `https://<username>.github.io/<repo-name>/`.
 2. GitHub **Settings → Pages → Custom domain** → `icedrop.co.il` → Save, then tick **Enforce HTTPS** once it's green.
 
 ## Notes
-- The delivery area map shows a ~800 m circle (about a 10-minute walk) around the middle of Ahi Dakar St. No pin, no house number.
+- The delivery area on the map is the shape in `js/config.js` → `map.area`: south of Weizmann Blvd, west of Highway 4, north of Ahuza. No pin, no house number.
 - The "30% more" headline is calculated from the bag price and kg per bag (Sheet) and the makolet numbers (`js/config.js`).
 - When the page opens, frost creeps in from the screen edges. After an order, 3D ice cubes fall. Both turn off for visitors who ask for "reduce motion".
 - The site remembers each visitor's language (Hebrew / English).

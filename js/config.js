@@ -27,8 +27,17 @@ window.ICE_DROP_CONFIG = {
   map: {
     centerLat: 32.18745,
     centerLng: 34.88075,
-    radiusMeters: 800,
-    zoom: 15
+    radiusMeters: 800,       // used only if "area" below is empty
+    zoom: 15,
+    // The delivery area: south of Weizmann Blvd, west of Highway 4, north of Ahuza.
+    // Each line is one corner: [latitude, longitude]. Leave it empty [] to show a circle instead.
+    area: [
+      [32.1913, 34.8732], [32.1916, 34.8770], [32.1912, 34.8810], [32.1906, 34.8845],
+      [32.1898, 34.8870], [32.1885, 34.8879], [32.1860, 34.8880], [32.1835, 34.8879],
+      [32.1818, 34.8870], [32.1808, 34.8845], [32.1804, 34.8810], [32.1805, 34.8775],
+      [32.1810, 34.8748], [32.1823, 34.8731], [32.1845, 34.8724], [32.1875, 34.8723],
+      [32.1900, 34.8726]
+    ]
   },
 
   /* ---------- MUSIC ----------

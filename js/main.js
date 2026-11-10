@@ -292,8 +292,10 @@
       var day = new Date(d.getFullYear(), d.getMonth(), d.getDate() + i);
       if (day.getDay() !== 1 && day.getDay() !== 5) continue;          // Mondays and Fridays
       var iso = day.getFullYear() + "-" + ("0" + (day.getMonth() + 1)).slice(-2) + "-" + ("0" + day.getDate()).slice(-2);
-      var win = day.getDay() === 1 ? "16:00-18:00" : "13:30-15:00";
-      out.push({ id: iso + "|" + win, date: iso, timeWindow: win, capacity: 30, remaining: 30, soldOut: false });
+      var mon = day.getDay() === 1, win = mon ? "16:15-17:30" : "13:30-15:00";
+      var cut = mon ? new Date(day.getFullYear(), day.getMonth(), day.getDate() - 1) : day;     // Sunday 20:00 / Friday 09:00
+      var cutIso = cut.getFullYear() + "-" + ("0" + (cut.getMonth() + 1)).slice(-2) + "-" + ("0" + cut.getDate()).slice(-2) + (mon ? " 20:00" : " 09:00");
+      out.push({ id: iso + "|" + win, date: iso, timeWindow: win, capacity: 30, remaining: 30, soldOut: false, cutoff: cutIso });
     }
     return out;
   }
@@ -360,6 +362,9 @@
     return guess - offset(res);
   }
   function cutoffOf(slot) {
+    // the Sheet tells us exactly when each day closes (e.g. Friday 09:00, Sunday 20:00 for Monday)
+    var m = /^(\d{4})-(\d{2})-(\d{2}) (\d{1,2}):(\d{2})$/.exec(slot.cutoff || "");
+    if (m) return israelToUtc(+m[1], +m[2], +m[3], +m[4], +m[5]);
     var p = slot.date.split("-").map(Number), c = String(S.cutoff || "20:00").split(":").map(Number);
     return israelToUtc(p[0], p[1], p[2] - 1, c[0] || 0, c[1] || 0);   // the night before
   }
@@ -671,9 +676,11 @@
       maxZoom: 19, className: "map-tiles",
       attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
     }).addTo(map);
-    // only the shaded circle: no pin, no house number
-    var circle = L.circle(center, { radius: M.radiusMeters, color: "#5bc0eb", weight: 2, dashArray: "6 6", fillColor: "#5bc0eb", fillOpacity: 0.18 }).addTo(map);
-    map.fitBounds(circle.getBounds(), { padding: [16, 16] });
+    // only the shaded delivery area: no pin, no house number
+    var style = { color: "#5bc0eb", weight: 2, dashArray: "6 6", fillColor: "#5bc0eb", fillOpacity: 0.18 };
+    var shape = (M.area && M.area.length > 2) ? L.polygon(M.area, style) : L.circle(center, Object.assign({ radius: M.radiusMeters }, style));
+    shape.addTo(map);
+    map.fitBounds(shape.getBounds(), { padding: [16, 16] });
     window.addEventListener("resize", function () { map.invalidateSize(); });
   }
 

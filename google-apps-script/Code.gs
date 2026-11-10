@@ -57,7 +57,11 @@ var SETTINGS = [
   ["WhatsApp number",            "058-590-9980", "Gets the WhatsApp order summaries"],
   ["Order cutoff time",          "20:00", "Orders close at this time the night before each delivery day"],
   ["Default capacity (bags)",    30,  "Used when a slot's Capacity is empty"],
-  ["Delivery days",              "Monday, Friday", "The Slots tab adds these days by itself for this week + next week. Then just type the time. Empty = add days by hand."],
+  ["Delivery days",              "Monday, Friday", "The Slots tab adds these days by itself for this week + next week. Empty = add days by hand."],
+  ["Monday delivery time",       "16:15-17:30", "Time window for Monday deliveries"],
+  ["Monday order cutoff",        "Sunday 20:00", "When Monday orders close (day + time)"],
+  ["Friday delivery time",       "13:30-15:00", "Time window for Friday deliveries"],
+  ["Friday order cutoff",        "Friday 09:00", "When Friday orders close (day + time)"],
   ["Weeks shown on site",        2,   "How many weeks of delivery days the website shows (2 = this week and next week)"],
   ["Alert email",                "",  "Who gets an email per order (empty = the sheet owner)"]
 ];
@@ -220,6 +224,7 @@ function readSettings_() {
     cutoff: timeText_(s["Order cutoff time"]) || "20:00",
     defaultCapacity: num("Default capacity (bags)"),
     deliveryDays: dayNumbers_(s["Delivery days"]),
+    dayRules: dayRules_(s),
     weeksShown: Math.max(1, num("Weeks shown on site") || 2),
     alertEmail: String(s["Alert email"] || "")
   };
@@ -262,7 +267,7 @@ function listSlots_(s) {
     if (!date || date > last) return;                                  // only this week + next week
     var open = r[4] === true || String(r[4]).toUpperCase() === "TRUE";
     if (!open) return;
-    var cutoff = shiftDate_(date, -1) + " " + s.cutoff;               // e.g. the night before at 20:00
+    var cutoff = cutoffFor_(s, date);                                  // e.g. Friday 09:00, or Sunday 20:00 for Monday
     if (now >= cutoff) return;
     var win = timeText_(r[2]);
     var cap = Number(r[3]) || s.defaultCapacity;
@@ -272,7 +277,7 @@ function listSlots_(s) {
       if (w.win === win && w.date <= date && weekday_(w.date) === weekday_(date)) taken += w.bags;
     });
     var remaining = Math.max(0, cap - taken);
-    out.push({ id: id, date: date, timeWindow: win, capacity: cap, remaining: remaining, soldOut: remaining === 0 });
+    out.push({ id: id, date: date, timeWindow: win, capacity: cap, remaining: remaining, soldOut: remaining === 0, cutoff: cutoff });
   });
   out.sort(function (a, b) { return a.id < b.id ? -1 : 1; });
   return out;
@@ -316,6 +321,25 @@ function dayNumbers_(text) {
   });
   return out;
 }
+var DAY_EN = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
+// "Monday delivery time" / "Monday order cutoff" (e.g. "Sunday 20:00") for each weekday
+function dayRules_(raw) {
+  var rules = {};
+  DAY_EN.forEach(function (name, wd) {
+    var time = raw[name + " delivery time"], cut = raw[name + " order cutoff"], rule = {};
+    if (time) rule.time = timeText_(time);
+    var m = /^\s*([^\d\s]+)\s+(\d{1,2}):(\d{2})/.exec(String(cut || ""));
+    if (m && (m[1].toLowerCase() in DAY_NAMES)) rule.cutoff = { wd: DAY_NAMES[m[1].toLowerCase()], hm: ("0" + m[2]).slice(-2) + ":" + m[3] };
+    if (rule.time || rule.cutoff) rules[wd] = rule;
+  });
+  return rules;
+}
+// When orders for a delivery date close: the day's own rule, or the night before at "Order cutoff time"
+function cutoffFor_(s, date) {
+  var rule = s.dayRules[weekday_(date)];
+  if (rule && rule.cutoff) return shiftDate_(date, -((weekday_(date) - rule.cutoff.wd + 7) % 7)) + " " + rule.cutoff.hm;
+  return shiftDate_(date, -1) + " " + s.cutoff;
+}
 function todayIso_() { return Utilities.formatDate(new Date(), TZ, "yyyy-MM-dd"); }
 // last day the site shows: the Saturday at the end of next week (with "Weeks shown on site" = 2)
 function lastShownDate_(s) {
@@ -332,11 +356,17 @@ function fillUpcomingSlots_(s) {
   if (!lock.tryLock(5000)) return 0;
   try {
     var have = {};
-    if (sh.getLastRow() > 1) sh.getRange(2, 1, sh.getLastRow() - 1, 1).getValues().forEach(function (r) { have[dateText_(r[0])] = true; });
+    if (sh.getLastRow() > 1) sh.getRange(2, 1, sh.getLastRow() - 1, 3).getValues().forEach(function (r, i) {
+      var d = dateText_(r[0]);
+      have[d] = true;
+      var rule = d && s.dayRules[weekday_(d)];
+      if (rule && rule.time && !String(r[2]).trim()) sh.getRange(i + 2, 3).setValue(rule.time);   // fill in an empty time
+    });
     var today = todayIso_(), last = lastShownDate_(s), added = 0;
     for (var d = today; d <= last; d = shiftDate_(d, 1)) {
       if (s.deliveryDays.indexOf(weekday_(d)) === -1 || have[d]) continue;
-      sh.appendRow([parseIsoDate_(d), "", "", "", true]);
+      var dayRule = s.dayRules[weekday_(d)] || {};
+      sh.appendRow([parseIsoDate_(d), "", dayRule.time || "", "", true]);
       sh.getRange(sh.getLastRow(), 5).insertCheckboxes().setValue(true);
       added++;
     }
