@@ -13,7 +13,7 @@
   <title>Ice Drop</title>
   <meta name="description" content="Ice Drop: 30% more ice than the makolet, delivered to your door in Ra'anana, same price. 30% יותר קרח מהמכולת, עד הדלת ברעננה, באותו מחיר.">
   <meta name="theme-color" content="#1e90d6">
-  <meta property="og:title" content="Ice Drop · Colder days ahead">
+  <meta property="og:title" content="Ice Drop">
   <meta property="og:description" content="30% more ice than the makolet. Delivered. Same price.">
   <link rel="icon" href="assets/favicon.svg" type="image/svg+xml">
 
@@ -43,7 +43,7 @@
     <div class="wrap header-inner">
       <a href="#top" class="logo" aria-label="Ice Drop" dir="ltr" lang="en">
         <img src="assets/logo.svg" alt="" width="40" height="40">
-        <span class="logo-text"><span class="logo-name">ICE DROP</span><span class="logo-tag">COLDER DAYS AHEAD</span></span>
+        <span class="logo-text"><span class="logo-name">ICE DROP</span></span>
       </a>
       <nav class="nav" aria-label="Main">
         <a href="#why" data-t="navWhy">Why us</a>
@@ -73,6 +73,8 @@
   <main id="top">
     <!-- ===== Hero: the pitch ===== -->
     <section class="hero">
+      <!-- glossy ice cubes you can push around (decoration) -->
+      <canvas id="hero-ice" class="hero-ice" aria-hidden="true"></canvas>
       <div class="wrap hero-grid">
         <div class="hero-text">
           <p class="eyebrow" data-t="heroKicker"></p>
@@ -82,6 +84,10 @@
             <a href="#order" class="btn btn-primary btn-big" data-t="heroCta">Order ice</a>
             <a href="#prices" class="btn btn-outline btn-big" data-t="heroCta2">See prices</a>
           </div>
+          <p class="countdown js-countdown" hidden>
+            <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="13" r="8"/><path d="M12 9v4l2.5 2M9 2h6"/></svg>
+            <span class="js-countdown-text"></span>
+          </p>
 
           <!-- Makolet vs Ice Drop (numbers filled in from the settings) -->
           <div class="compare">
@@ -177,99 +183,77 @@
         <div id="order-form-wrap">
           <h2 class="section-title" data-t="orderTitle"></h2>
           <form id="order-form" class="order-card" novalidate>
+            <p class="countdown countdown-bar js-countdown" hidden>
+              <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="13" r="8"/><path d="M12 9v4l2.5 2M9 2h6"/></svg>
+              <span class="js-countdown-text"></span>
+            </p>
             <p id="form-error" class="form-error" role="alert" hidden></p>
             <div class="hp" aria-hidden="true">
               <label>Leave empty <input type="text" name="website" tabindex="-1" autocomplete="off"></label>
             </div>
 
-            <!-- 1. Ice -->
-            <fieldset class="step">
-              <legend><span class="step-num">1</span><span data-t="stepIce"></span></legend>
-
-              <div class="field">
-                <span class="label" id="lbl-bags" data-t="fBags"></span>
-                <div id="bag-picker" class="bag-picker" role="radiogroup" aria-labelledby="lbl-bags"></div>
-                <p class="hint js-bags-hint"></p>
-                <div id="upsell" class="upsell" hidden>
-                  <p class="js-upsell-text"></p>
-                  <button type="button" class="btn btn-small btn-primary" id="upsell-btn" data-t="upsellBtn"></button>
-                </div>
-              </div>
-
-              <div class="field">
-                <span class="label" id="lbl-cooler" data-t="fCooler"></span>
-                <div id="cooler-picker" class="cooler-picker" role="radiogroup" aria-labelledby="lbl-cooler"></div>
-                <label class="check" id="own-cooler-wrap" hidden>
-                  <input type="checkbox" name="ownCooler" id="f-own-cooler">
-                  <span data-t="ownCooler"></span>
-                </label>
-              </div>
-              <p class="err" id="err-ice"></p>
-            </fieldset>
-
-            <!-- 2. Delivery day (read from the Sheet's Slots tab) -->
-            <fieldset class="step">
-              <legend><span class="step-num">2</span><span data-t="stepSlot"></span></legend>
-              <div id="slot-list" class="slot-list" role="radiogroup" aria-live="polite"></div>
-              <p class="err" id="err-slot"></p>
-            </fieldset>
-
-            <!-- 3. Details -->
-            <fieldset class="step">
-              <legend><span class="step-num">3</span><span data-t="stepDetails"></span></legend>
-              <div class="row-2">
-                <div class="field">
-                  <label for="f-name" data-t="fName"></label>
-                  <input id="f-name" name="name" type="text" autocomplete="name" required maxlength="80" data-ph="fNamePh">
-                  <p class="err" id="err-name"></p>
-                </div>
-                <div class="field">
-                  <label for="f-phone" data-t="fPhone"></label>
-                  <input id="f-phone" name="phone" type="tel" inputmode="tel" autocomplete="tel" required maxlength="20" dir="ltr" data-ph="fPhonePh">
-                  <p class="err" id="err-phone"></p>
-                </div>
-              </div>
-              <div class="field">
-                <label for="f-street" data-t="fStreet"></label>
-                <input id="f-street" name="street" type="text" autocomplete="street-address" required maxlength="120" data-ph="fStreetPh">
-                <p class="err" id="err-street"></p>
-              </div>
-              <div class="field">
-                <label for="f-apt"><span data-t="fApt"></span> <small class="opt">(<span data-t="optional"></span>)</small></label>
-                <input id="f-apt" name="apt" type="text" maxlength="60">
-              </div>
-              <div class="field">
-                <label for="f-notes"><span data-t="fNotes"></span> <small class="opt">(<span data-t="optional"></span>)</small></label>
-                <textarea id="f-notes" name="notes" rows="2" maxlength="300" data-ph="fNotesPh"></textarea>
-              </div>
-            </fieldset>
-
-            <!-- 4. Payment -->
-            <fieldset class="step">
-              <legend><span class="step-num">4</span><span data-t="stepPay"></span></legend>
-              <div class="pay-options" role="radiogroup">
-                <label class="pay-option">
-                  <input type="radio" name="payment" value="bit">
-                  <span><b data-t="payBit"></b><small data-t="payBitSub"></small></span>
-                </label>
-                <label class="pay-option">
-                  <input type="radio" name="payment" value="cash">
-                  <span><b data-t="payCash"></b><small data-t="payCashSub"></small></span>
-                </label>
-              </div>
-              <p class="err" id="err-payment"></p>
-            </fieldset>
-
-            <!-- Live order summary -->
-            <div class="summary-live" aria-live="polite">
-              <div class="sum-row"><span data-t="sumBags"></span><b id="sum-bags" dir="ltr"></b></div>
-              <div class="sum-row"><span data-t="sumKg"></span><b id="sum-kg" dir="ltr"></b></div>
-              <div class="sum-row js-sum-regular"><span data-t="sumRegular"></span><s id="sum-regular" dir="ltr"></s></div>
-              <div class="sum-row sum-save js-sum-save"><span data-t="sumSavings"></span><b id="sum-save" dir="ltr"></b></div>
-              <div class="sum-row sum-total"><span data-t="sumTotal"></span><b id="sum-total" dir="ltr"></b></div>
+            <!-- The cooler fills up as you choose more ice -->
+            <div class="cooler-stage" aria-hidden="true">
+              <canvas id="cooler-canvas"></canvas>
+              <div class="cooler-readout"><b id="kg-count" dir="ltr">0</b> <span data-t="kg"></span><small id="bags-count"></small></div>
             </div>
 
-            <button type="submit" class="btn btn-primary btn-big btn-block" id="submit-btn" data-t="submit"></button>
+            <!-- How much ice: one tap -->
+            <div class="field">
+              <span class="label" id="lbl-ice" data-t="fIce"></span>
+              <div id="ice-choices" class="ice-choices" role="radiogroup" aria-labelledby="lbl-ice"></div>
+              <div id="upsell" class="upsell" hidden>
+                <p class="js-upsell-text"></p>
+                <button type="button" class="btn btn-small" id="upsell-btn" data-t="upsellBtn"></button>
+              </div>
+            </div>
+
+            <!-- Which day (from the Sheet's Slots tab) -->
+            <div class="field">
+              <span class="label" id="lbl-slot" data-t="fDay"></span>
+              <div id="slot-list" class="slot-chips" role="radiogroup" aria-labelledby="lbl-slot" aria-live="polite"></div>
+              <p class="err" id="err-slot"></p>
+            </div>
+
+            <div class="row-2">
+              <div class="field">
+                <label for="f-name" data-t="fName"></label>
+                <input id="f-name" name="name" type="text" autocomplete="name" required maxlength="80" data-ph="fNamePh">
+                <p class="err" id="err-name"></p>
+              </div>
+              <div class="field">
+                <label for="f-phone" data-t="fPhone"></label>
+                <input id="f-phone" name="phone" type="tel" inputmode="tel" autocomplete="tel" required maxlength="20" dir="ltr" data-ph="fPhonePh">
+                <p class="err" id="err-phone"></p>
+              </div>
+            </div>
+            <div class="field">
+              <label for="f-street" data-t="fStreet"></label>
+              <input id="f-street" name="street" type="text" autocomplete="street-address" required maxlength="140" data-ph="fStreetPh">
+              <p class="err" id="err-street"></p>
+            </div>
+
+            <div class="field">
+              <div class="seg" role="radiogroup" aria-label="Payment">
+                <label><input type="radio" name="payment" value="bit"><span data-t="payBit"></span></label>
+                <label><input type="radio" name="payment" value="cash"><span data-t="payCash"></span></label>
+              </div>
+              <p class="err" id="err-payment"></p>
+            </div>
+
+            <details class="more">
+              <summary data-t="moreOptions"></summary>
+              <textarea id="f-notes" name="notes" rows="2" maxlength="300" data-ph="fNotesPh" data-t-label="fNotes"></textarea>
+              <label class="check" id="own-cooler-wrap" hidden>
+                <input type="checkbox" name="ownCooler" id="f-own-cooler">
+                <span data-t="ownCooler"></span>
+              </label>
+            </details>
+
+            <button type="submit" class="btn btn-primary btn-big btn-block" id="submit-btn">
+              <span class="js-submit-label" data-t="submit"></span><span class="btn-total" id="btn-total" dir="ltr"></span>
+            </button>
+            <p class="savings-line" id="savings-line" aria-live="polite"></p>
           </form>
         </div>
 
@@ -308,7 +292,7 @@
     <div class="wrap footer-inner">
       <div class="logo logo-footer" dir="ltr" lang="en">
         <img src="assets/logo.svg" alt="" width="40" height="40">
-        <span class="logo-text"><span class="logo-name">ICE DROP</span><span class="logo-tag">COLDER DAYS AHEAD</span></span>
+        <span class="logo-text"><span class="logo-name">ICE DROP</span></span>
       </div>
       <p data-t="footerTag"></p>
       <p class="footer-contact" data-t="footerContact"></p>

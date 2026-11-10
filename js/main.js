@@ -16,7 +16,8 @@
   var S = clone(CFG.fallback);        // settings (replaced by the Sheet's)
   var slots = [];                     // delivery slots from the Sheet
   var slotsState = "loading";         // loading | ok | error
-  var order = { bags: 0, cooler: "none", slotId: "" };
+  var order = { choice: "b2", slotId: "" };   // choice: "b1".."b4" = bags, or a cooler package id
+  var coolerFx = null;
   var lastOrder = null;
 
   function $(sel, root) { return (root || document).querySelector(sel); }
@@ -76,10 +77,10 @@
     applyTexts();
     renderPitch();
     renderPrices();
-    renderBagPicker();
-    renderCoolerPicker();
+    renderIceChoices();
     renderSlots();
-    updateSummary();
+    updateTotals();
+    updateCountdown();
     renderContact();
     if (lastOrder) renderConfirmation(lastOrder);
   }
@@ -97,11 +98,15 @@
   }
 
   function calc() {
-    var pkg = pkgById(order.cooler);
-    var totalBags = order.bags + (pkg ? pkg.bags : 0);
+    var bags = 0, pkg = null;
+    if (/^b\d+$/.test(order.choice)) bags = Math.min(S.maxBags, parseInt(order.choice.slice(1), 10));
+    else pkg = pkgById(order.choice);
+    if (!bags && !pkg) { bags = Math.min(2, S.maxBags); order.choice = "b" + bags; }
+    var totalBags = bags + (pkg ? pkg.bags : 0);
     var regular = totalBags * S.pricePerBag;
-    var final = order.bags * S.pricePerBag + (pkg ? pkg.price : 0);
-    return { totalBags: totalBags, totalKg: totalBags * S.kgPerBag, regular: regular, final: final, savings: regular - final, pkg: pkg };
+    var final = bags * S.pricePerBag + (pkg ? pkg.price : 0);
+    return { bags: bags, cooler: pkg ? pkg.id : "none", totalBags: totalBags, totalKg: totalBags * S.kgPerBag,
+             regular: regular, final: final, savings: regular - final, pkg: pkg };
   }
 
   function renderPitch() {
@@ -123,6 +128,7 @@
       var regular = p.bags * S.pricePerBag, save = regular - p.price;
       var card = document.createElement("article");
       card.className = "cooler-card" + (p.id === best ? " is-best" : "");
+      card.dataset.choice = p.id;
       card.innerHTML =
         (p.id === best ? '<span class="best-badge"></span>' : "") +
         '<div><p class="price-name"></p><p class="price-desc"></p></div>' +
@@ -141,56 +147,48 @@
   }
 
   /* ================= Order form: ice ================= */
-  function renderBagPicker() {
-    var holder = $("#bag-picker");
-    holder.innerHTML = "";
-    if (order.bags > S.maxBags) order.bags = S.maxBags;
-    for (var n = 0; n <= S.maxBags; n++) {
-      var lab = document.createElement("label");
-      lab.className = "bag-opt";
-      lab.innerHTML = '<input type="radio" name="bags"><span></span>';
-      var input = $("input", lab);
-      input.value = n;
-      input.checked = n === order.bags;
-      $("span", lab).textContent = n;
-      holder.appendChild(lab);
-    }
-    $(".js-bags-hint").textContent = plainT("bagsHint", { kg: kgText(S.kgPerBag), price: money(S.pricePerBag) });
-  }
-
-  function renderCoolerPicker() {
-    var holder = $("#cooler-picker");
+  // One tap: 1–4 bags, or a cooler package
+  function renderIceChoices() {
+    var holder = $("#ice-choices");
     holder.innerHTML = "";
     var best = bestDealId();
-    var opts = [{ id: "none" }].concat(S.packages);
-    if (!pkgById(order.cooler)) order.cooler = "none";
-    opts.forEach(function (p) {
-      var lab = document.createElement("label");
-      lab.className = "cooler-opt" + (p.id === best ? " is-best" : "");
-      var regular = p.bags ? p.bags * S.pricePerBag : 0, save = p.bags ? regular - p.price : 0;
-      lab.innerHTML = '<input type="radio" name="cooler"><span class="co-body">' +
-        '<span class="co-main"><b class="co-name"></b><small class="co-desc"></small></span>' +
-        '<span class="co-price">' + (save > 0 ? '<s dir="ltr"></s> ' : "") + '<b class="co-now" dir="ltr"></b>' +
-        (save > 0 ? '<small class="save-tag"></small>' : "") + "</span></span>";
-      var input = $("input", lab);
-      input.value = p.id;
-      input.checked = p.id === order.cooler;
-      $(".co-name", lab).textContent = p.id === "none" ? plainT("coolerNone") : pkgName(p.id);
-      if (p.id !== "none") {
-        $(".co-desc", lab).textContent = plainT("pkgDesc", { bags: p.bags, kg: kgText(p.bags * S.kgPerBag) });
-        $(".co-now", lab).textContent = money(p.price);
-        if (save > 0) {
-          $("s", lab).textContent = money(regular);
-          $(".save-tag", lab).textContent = p.id === best ? plainT("save", { save: money(save) }) + " · " + plainT("bestDeal") : plainT("save", { save: money(save) });
-        }
-      }
-      holder.appendChild(lab);
+    var bagRow = document.createElement("div");
+    bagRow.className = "ice-row ice-bags";
+    for (var n = 1; n <= S.maxBags; n++) {
+      bagRow.appendChild(iceOption("b" + n, n === 1 ? plainT("choiceBag1") : plainT("choiceBags", { n: n }),
+        kgText(n * S.kgPerBag) + " " + plainT("kg"), n * S.pricePerBag, 0, false));
+    }
+    holder.appendChild(bagRow);
+    var pkgRow = document.createElement("div");
+    pkgRow.className = "ice-row ice-pkgs";
+    S.packages.forEach(function (p) {
+      pkgRow.appendChild(iceOption(p.id, pkgName(p.id), kgText(p.bags * S.kgPerBag) + " " + plainT("kg"),
+        p.price, p.bags * S.pricePerBag - p.price, p.id === best));
     });
+    holder.appendChild(pkgRow);
+  }
+  function iceOption(value, name, kg, price, save, best) {
+    var lab = document.createElement("label");
+    lab.className = "ice-opt" + (best ? " is-best" : "");
+    lab.innerHTML = '<input type="radio" name="ice"><span class="ice-body">' +
+      (best ? '<span class="best-badge"></span>' : "") +
+      '<b class="ice-name"></b><small class="ice-kg"></small>' +
+      '<span class="ice-price">' + (save > 0 ? '<s dir="ltr"></s> ' : "") + '<b dir="ltr"></b></span></span>';
+    var input = $("input", lab);
+    input.value = value;
+    input.checked = value === order.choice;
+    if (best) $(".best-badge", lab).textContent = plainT("bestDeal");
+    $(".ice-name", lab).textContent = name;
+    $(".ice-kg", lab).textContent = kg;
+    $(".ice-price b", lab).textContent = money(price);
+    if (save > 0) $(".ice-price s", lab).textContent = money(price + save);
+    return lab;
   }
 
   function updateUpsell() {
-    var next = S.packages.filter(function (p) { return p.bags === order.bags + 1; })[0];
-    var show = order.bags === S.maxBags && order.cooler === "none" && next;
+    var c = calc();
+    var next = S.packages.filter(function (p) { return p.bags === c.bags + 1; })[0];
+    var show = c.bags === S.maxBags && c.cooler === "none" && next;
     $("#upsell").hidden = !show;
     if (show) {
       var save = next.bags * S.pricePerBag - next.price;
@@ -199,30 +197,37 @@
     }
   }
 
-  function updateSummary() {
+  var shownKg = 0, kgAnim = null;
+  function updateTotals() {
     var c = calc();
-    $("#sum-bags").textContent = c.totalBags;
-    $("#sum-kg").textContent = kgText(c.totalKg) + " " + plainT("kg");
-    $("#sum-regular").textContent = money(c.regular);
-    $("#sum-save").textContent = money(c.savings);
-    $("#sum-total").textContent = money(c.final);
-    $(".js-sum-regular").hidden = !(c.savings > 0);
-    $(".js-sum-save").hidden = !(c.savings > 0);
-    $("#own-cooler-wrap").hidden = order.cooler === "none";
+    $("#btn-total").textContent = money(c.final);
+    $("#savings-line").textContent = c.savings > 0 ? plainT("savingsLine", { save: money(c.savings), name: pkgName(c.cooler) }) : "";
+    $("#bags-count").textContent = c.totalBags === 1 ? plainT("readoutBag1") : plainT("readoutBags", { n: c.totalBags });
+    $("#own-cooler-wrap").hidden = c.cooler === "none";
+    // the kg number counts up / down
+    var target = Math.round(c.totalKg * 10) / 10, from = shownKg, t0 = performance.now();
+    cancelAnimationFrame(kgAnim);
+    (function step(now) {
+      var k = FX.reducedMotion() ? 1 : Math.min(1, (now - t0) / 600);
+      shownKg = from + (target - from) * (1 - Math.pow(1 - k, 3));
+      $("#kg-count").textContent = kgText(shownKg);
+      if (k < 1) kgAnim = requestAnimationFrame(step); else shownKg = target;
+    })(t0);
+    if (coolerFx) coolerFx.set(c.totalBags);
     updateUpsell();
     markSlotFit();
   }
 
   /* ================= Delivery slots ================= */
-  function slotDate(slot) {
+  function slotDate(slot, short) {
     var p = slot.date.split("-").map(Number);
     var d = new Date(Date.UTC(p[0], p[1] - 1, p[2], 12));
     return new Intl.DateTimeFormat(lang === "he" ? "he-IL" : "en-US", {
-      weekday: "long", month: lang === "he" ? "long" : "short", day: "numeric", timeZone: "UTC"
+      weekday: short ? "short" : "long", month: lang === "he" ? "long" : "short", day: "numeric", timeZone: "UTC"
     }).format(d);
   }
-  function slotLabel(slot) {
-    return slotDate(slot) + (slot.timeWindow ? ", ⁦" + slot.timeWindow.replace("-", "–") + "⁩" : "");
+  function slotLabel(slot, short) {
+    return slotDate(slot, short) + (slot.timeWindow ? ", ⁦" + slot.timeWindow.replace("-", "–") + "⁩" : "");
   }
   function slotById(id) { return slots.filter(function (s) { return s.id === id; })[0]; }
 
@@ -244,15 +249,20 @@
       holder.appendChild(none);
     }
     if (order.slotId && !(slotById(order.slotId) || {}).remaining) order.slotId = "";
+    if (!order.slotId) {                         // pick the first day that has room
+      var need = calc().totalBags;
+      var first = slots.filter(function (s) { return !s.soldOut && s.remaining >= need; })[0];
+      if (first) order.slotId = first.id;
+    }
     slots.forEach(function (s) {
       var lab = document.createElement("label");
-      lab.className = "slot-opt" + (s.soldOut ? " is-sold" : "");
+      lab.className = "slot-chip" + (s.soldOut ? " is-sold" : "");
       lab.innerHTML = '<input type="radio" name="slot"><span class="slot-body"><b class="slot-day"></b><small class="slot-left"></small></span>';
       var input = $("input", lab);
       input.value = s.id;
       input.disabled = !!s.soldOut;
       input.checked = s.id === order.slotId;
-      $(".slot-day", lab).textContent = slotLabel(s);
+      $(".slot-day", lab).textContent = slotLabel(s, true);
       $(".slot-left", lab).textContent = s.soldOut ? plainT("soldOut") : (s.remaining <= 10 ? plainT("bagsLeft", { n: s.remaining }) : "");
       holder.appendChild(lab);
     });
@@ -268,7 +278,7 @@
   // Grey out days that don't have room for this many bags
   function markSlotFit() {
     var need = calc().totalBags;
-    $all(".slot-opt").forEach(function (lab) {
+    $all(".slot-chip").forEach(function (lab) {
       var s = slotById($("input", lab).value);
       lab.classList.toggle("too-small", !!(s && !s.soldOut && need > s.remaining));
     });
@@ -312,6 +322,42 @@
       .then(renderAll);
   }
 
+  /* ================= Live countdown to the order cutoff ================= */
+  // Israel wall-clock time → real moment (handles summer/winter time)
+  function israelToUtc(y, m, d, h, mi) {
+    function offset(ms) {
+      var p = {};
+      new Intl.DateTimeFormat("en-US", { timeZone: "Asia/Jerusalem", hourCycle: "h23", year: "numeric", month: "numeric",
+        day: "numeric", hour: "numeric", minute: "numeric" }).formatToParts(new Date(ms)).forEach(function (x) { p[x.type] = x.value; });
+      return Date.UTC(+p.year, +p.month - 1, +p.day, +p.hour % 24, +p.minute) - ms;
+    }
+    var guess = Date.UTC(y, m - 1, d, h, mi);
+    var res = guess - offset(guess);
+    return guess - offset(res);
+  }
+  function cutoffOf(slot) {
+    var p = slot.date.split("-").map(Number), c = String(S.cutoff || "20:00").split(":").map(Number);
+    return israelToUtc(p[0], p[1], p[2] - 1, c[0] || 0, c[1] || 0);   // the night before
+  }
+  var reloading = false;
+  function updateCountdown() {
+    var els = $all(".js-countdown");
+    var next = slotsState === "ok" ? slots.filter(function (s) { return !s.soldOut; })[0] : null;
+    if (!next) { els.forEach(function (el) { el.hidden = true; }); return; }
+    var left = cutoffOf(next) - Date.now();
+    if (left <= 0) {
+      if (!reloading) { reloading = true; loadFromSheet().then(function () { reloading = false; }); }
+      return;
+    }
+    var sec = Math.floor(left / 1000), d = Math.floor(sec / 86400), h = Math.floor(sec % 86400 / 3600),
+        m = Math.floor(sec % 3600 / 60), sc = sec % 60, T = TEXTS[lang];
+    var pad = function (n) { return (n < 10 ? "0" : "") + n; };
+    var clock = "\u2066" + pad(h) + ":" + pad(m) + ":" + pad(sc) + "\u2069";
+    var time = (d === 1 ? T.cdDay1 : d > 1 ? T.cdDays.replace("{n}", d) : "") + clock;
+    var html = t("countdown", { day: slotDate(next), time: time });
+    els.forEach(function (el) { el.hidden = false; $(".js-countdown-text", el).innerHTML = html; });
+  }
+
   /* ================= Form helpers ================= */
   var form;
   function val(name) {
@@ -334,7 +380,7 @@
     return null;
   }
 
-  var ERR_IDS = ["ice", "slot", "name", "phone", "street", "payment"];
+  var ERR_IDS = ["slot", "name", "phone", "street", "payment"];
   function setError(id, msg) {
     var err = $("#err-" + id);
     if (err) err.textContent = msg || "";
@@ -360,7 +406,6 @@
     clearErrors();
     var c = calc();
     var slot = slotById(order.slotId);
-    if (c.totalBags < 1) fail("ice", plainT("errIce"));
     if (!slot) fail("slot", plainT("errSlot"));
     else if (c.totalBags > slot.remaining) fail("slot", plainT("slotTooSmall", { n: slot.remaining }));
     if (val("name").length < 2) fail("name", plainT("errName"));
@@ -483,19 +528,15 @@
 
     form.addEventListener("change", function (e) {
       var n = e.target.name;
-      if (n === "bags") order.bags = parseInt(e.target.value, 10) || 0;
-      if (n === "cooler") order.cooler = e.target.value;
+      if (n === "ice") order.choice = e.target.value;
       if (n === "slot") order.slotId = e.target.value;
-      if (n === "bags" || n === "cooler") setError("ice", "");
       if (n === "payment") setError("payment", "");
-      updateSummary();
+      updateTotals();
     });
     $("#upsell-btn").addEventListener("click", function () {
-      order.bags = 0;
-      order.cooler = this.dataset.pkg;
-      renderBagPicker();
-      renderCoolerPicker();
-      updateSummary();
+      order.choice = this.dataset.pkg;
+      renderIceChoices();
+      updateTotals();
     });
     ["name", "phone", "street"].forEach(function (id) {
       form.elements[id].addEventListener("input", function () { setError(id, ""); });
@@ -522,20 +563,20 @@
         action: "order", language: lang,
         name: val("name"), phone: normalizePhone(val("phone")), street: val("street"),
         apt: val("apt"), notes: val("notes"),
-        bags: order.bags, cooler: order.cooler, ownCooler: order.cooler !== "none" && !!val("ownCooler"),
+        bags: c.bags, cooler: c.cooler, ownCooler: c.cooler !== "none" && !!val("ownCooler"),
         slotId: order.slotId, payment: val("payment"), website: val("website")
       };
       sending = true;
       var btn = $("#submit-btn");
       btn.disabled = true;
-      btn.textContent = plainT("sending");
+      $(".js-submit-label").textContent = plainT("sending");
 
       send(payload).then(function (res) {
         if (res && res.ok && res.orderId) {
           lastOrder = {
             id: res.orderId, slot: slotById(order.slotId) || res.slot,
             name: payload.name, phone: payload.phone, street: payload.street, apt: payload.apt, notes: payload.notes,
-            bags: order.bags, cooler: order.cooler, ownCooler: payload.ownCooler, payment: payload.payment,
+            bags: c.bags, cooler: c.cooler, ownCooler: payload.ownCooler, payment: payload.payment,
             totalBags: c.totalBags, totalKg: c.totalKg, regular: c.regular,
             final: res.price ? res.price.final : c.final, savings: res.price ? res.price.savings : c.savings
           };
@@ -569,14 +610,14 @@
       }).then(function () {
         sending = false;
         btn.disabled = false;
-        btn.textContent = plainT("submit");
+        $(".js-submit-label").textContent = plainT("submit");
       });
     });
 
     $("#new-order").addEventListener("click", function () {
       lastOrder = null;
       form.reset();
-      order = { bags: 0, cooler: "none", slotId: "" };
+      order = { choice: "b2", slotId: "" };
       $("#thanks").hidden = true;
       $("#order-form-wrap").hidden = false;
       renderAll();
@@ -633,6 +674,7 @@
   /* ================= Start ================= */
   function start() {
     lang = loadLang();
+    coolerFx = FX.cooler ? FX.cooler($("#cooler-canvas")) : null;
     initForm();
     renderAll();
     initMusic();
@@ -648,6 +690,18 @@
     });
     $("#team-img").alt = plainT("teamAlt");
     loadFromSheet();
+    setInterval(updateCountdown, 1000);
+    if (FX.touchIce) FX.touchIce($(".hero"), $("#hero-ice"));
+
+    // tapping a price card picks it in the order form
+    $("#prices").addEventListener("click", function (e) {
+      var card = e.target.closest(".cooler-card, .price-bag");
+      if (!card) return;
+      order.choice = card.dataset.choice || "b2";
+      renderIceChoices();
+      updateTotals();
+      $("#order").scrollIntoView({ behavior: FX.reducedMotion() ? "auto" : "smooth" });
+    });
 
     // Opening animation: frost creeps over the screen, then clears
     var frostStarted = false;
