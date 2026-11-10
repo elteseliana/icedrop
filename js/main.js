@@ -586,6 +586,7 @@
           thanks.scrollIntoView({ behavior: FX.reducedMotion() ? "auto" : "smooth", block: "start" });
           thanks.focus({ preventScroll: true });
           FX.celebrate();
+          music.start();                           // celebrate the order with the song (unless they turned music off)
           // the slot now has fewer bags left
           var s = slotById(order.slotId);
           if (s) { s.remaining -= c.totalBags; s.soldOut = s.remaining <= 0; }
