@@ -16,7 +16,7 @@ window.ICE_DROP_CONFIG = {
   /* ---------- GOOGLE SHEET ----------
      Paste your Apps Script "Web app URL" here (ends with /exec).
      Empty = demo mode: the site works, but orders are NOT saved.   */
-  googleSheetUrl: "",
+  googleSheetUrl: "https://script.google.com/macros/s/AKfycbxEqktRexWFOf8TLvnJsfWgkb9on_hvnVteo9zTe6LllKgBT88owxNg_LcOVE59s5q1/exec",
 
   /* ---------- THE MAKOLET COMPARISON (headline) ---------- */
   makolet: { kg: 2, price: 12 },
