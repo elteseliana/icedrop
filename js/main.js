@@ -631,10 +631,10 @@
     if (!window.L || !el) return;
     var M = CFG.map, center = [M.centerLat, M.centerLng];
     var map = L.map(el, { center: center, zoom: M.zoom, scrollWheelZoom: false, dragging: !L.Browser.mobile, tap: false });
-    // dark map style (free, from CARTO, based on OpenStreetMap)
-    L.tileLayer("https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png", {
-      maxZoom: 19, subdomains: "abcd",
-      attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> &copy; <a href="https://carto.com/attributions">CARTO</a>'
+    // OpenStreetMap (free, no key needed), darkened with a CSS filter (see .map-tiles in style.css)
+    L.tileLayer("https://tile.openstreetmap.org/{z}/{x}/{y}.png", {
+      maxZoom: 19, className: "map-tiles",
+      attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
     }).addTo(map);
     // only the shaded circle: no pin, no house number
     var circle = L.circle(center, { radius: M.radiusMeters, color: "#5bc0eb", weight: 2, dashArray: "6 6", fillColor: "#5bc0eb", fillOpacity: 0.18 }).addTo(map);

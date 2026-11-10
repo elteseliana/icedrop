@@ -237,6 +237,8 @@ html[dir="rtl"] .bar-us { background: linear-gradient(270deg, var(--blue), var(-
 .area-note { color: var(--dim); }
 .area-note b { color: var(--on-dark); }
 .leaflet-container { font-family: var(--sans); background: var(--ink-3); }
+/* turn the normal light map into a dark one that matches the site */
+.map-tiles { filter: invert(1) hue-rotate(180deg) brightness(.85) contrast(.9) saturate(.55); }
 .leaflet-control-attribution { background: rgba(5, 24, 43, .7) !important; color: var(--dim) !important; }
 .leaflet-control-attribution a { color: var(--frost) !important; }
 
