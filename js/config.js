@@ -6,7 +6,7 @@
    can change them without touching code.
 
    This file only has things the Sheet doesn't:
-   the Sheet link, the map, the music, the photo and the language.
+   the Sheet link, the map, the music and the language.
 
    Rules: keep the "quotes" and the commas at the ends of lines.
    ===================================================================== */
@@ -17,12 +17,6 @@ window.ICE_DROP_CONFIG = {
      Paste your Apps Script "Web app URL" here (ends with /exec).
      Empty = demo mode: the site works, but orders are NOT saved.   */
   googleSheetUrl: "",
-
-  /* ---------- PHOTO ----------
-     Photo of the ice guy with the red wagon and Igloo cooler.
-     Put the picture in assets/img/ and write its name here,
-     e.g. "assets/img/wagon.jpg". Empty = the photo section is hidden. */
-  photo: "",
 
   /* ---------- THE MAKOLET COMPARISON (headline) ---------- */
   makolet: { kg: 2, price: 12 },
@@ -38,10 +32,19 @@ window.ICE_DROP_CONFIG = {
   },
 
   /* ---------- MUSIC ----------
-     The song starts on the visitor's first tap/click anywhere on the page
-     (browsers don't allow sound before that). false = only when they
-     press the music button.                                           */
+     Plays when the visitor taps "Tap to enter" (browsers don't allow
+     sound before a tap). Uses YouTube's official video player.
+     youtubeVideoId: the part after "watch?v=" in a YouTube link.
+     musicStartAt:   second to start from (0 = the beginning).
+     musicFile:      optional: a music file of your own that you have the
+                     rights to use, e.g. "assets/audio/song.mp3".
+                     When set, it is played instead of YouTube.
+     autoPlayMusic:  false = only play when the music button is pressed. */
+  youtubeVideoId: "rog8ou-ZepE",     // Vanilla Ice - Ice Ice Baby (official video, vanillaiceVEVO)
+  // backup if YouTube refuses to play the video on other websites:
   spotifyEmbedUrl: "https://open.spotify.com/embed/track/11d9oUiwHuYt216EFA2tiz",
+  musicStartAt: 0,
+  musicFile: "",
   autoPlayMusic: true,
 
   /* ---------- LANGUAGE ---------- */

@@ -10,7 +10,7 @@ Plain HTML, CSS and JavaScript, with no build step and nothing to install. Order
 | Prices, cooler packages, Bit number, WhatsApp number, order cutoff, default capacity | **Google Sheet → `Settings` tab** (no code!) |
 | Delivery days / time windows / how many bags per day / open or closed | **Google Sheet → `Slots` tab** |
 | Order status (paid, delivered, cancelled) | **Google Sheet → `Orders` tab** |
-| Sheet link, photo, map, music, makolet comparison, default language | `js/config.js` |
+| Sheet link, map, music, makolet comparison, default language | `js/config.js` |
 | Any sentence on the site (English + Hebrew) | `js/texts.js` |
 | Colors and fonts | top of `css/style.css` |
 | The Google Sheet backend | `google-apps-script/Code.gs` (paste into the Sheet once) |
@@ -45,12 +45,7 @@ If you change the script later: **Deploy → Manage deployments → ✏️ → V
 
 **Settings tab**: change the value in column B. Don't change the names in column A.
 
-## 3. The photo
-
-Put the photo (him with the red wagon and Igloo cooler) in `assets/img/`, e.g. `assets/img/wagon.jpg`,
-then set `photo: "assets/img/wagon.jpg"` in `js/config.js`. Until then that section stays hidden.
-
-## 4. Put it online with GitHub Pages (free)
+## 3. Put it online with GitHub Pages (free)
 
 Repository **Settings → Pages** → Source **Deploy from a branch**, Branch **main**, folder **/ (root)** → Save.
 After 1–2 minutes it's live at `https://<username>.github.io/<repo-name>/`.
@@ -64,4 +59,4 @@ After 1–2 minutes it's live at `https://<username>.github.io/<repo-name>/`.
 - The "30% more" headline is calculated from the bag price and kg per bag (Sheet) and the makolet numbers (`js/config.js`).
 - When the page opens, frost creeps in from the screen edges. After an order, 3D ice cubes fall. Both turn off for visitors who ask for "reduce motion".
 - The site remembers each visitor's language (Hebrew / English).
-- Music: "Ice Ice Baby" (Spotify's official player) starts on the visitor's first tap or click anywhere on the page. Browsers don't allow sound before that. The music button in the header is play/pause, and if someone turns it off, the site remembers. To turn auto-start off, set `autoPlayMusic: false` in `js/config.js`. Visitors who aren't logged in to Spotify hear Spotify's 30-second preview.
+- Music: the site opens with a "Tap to enter" screen. That tap starts "Ice Ice Baby" (browsers don't allow sound before a tap). It plays through YouTube's official video player. If YouTube refuses to play the video on other websites, the site switches to Spotify automatically (full song for people logged in to Spotify, a 30-second preview for others). The header button is play/pause. To use your own music file instead, set `musicFile` in `js/config.js`. To turn auto-start off, set `autoPlayMusic: false`.

@@ -234,6 +234,7 @@
      and they get pushed away, spinning.
      ================================================================= */
   function touchIce(area, canvas) {
+    // (fewer cubes on phones so the headline stays easy to read)
     if (!area || !canvas) return;
     var g, W, H, cubes = [], pointer = null, visible = true, running = false;
 
@@ -243,7 +244,7 @@
     }
     size();
     var small = W < 700;
-    var n = small ? 7 : 11;
+    var n = small ? 5 : 9;
     for (var i = 0; i < n; i++) {
       var s = small ? rand(15, 27) : rand(18, 36);
       var c = newCube(rand(s, W - s), rand(s, H - s), s);

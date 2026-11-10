@@ -115,34 +115,34 @@
     $all(".js-mk-price").forEach(function (el) { el.textContent = p.mkPrice; });
     $all(".js-our-kg").forEach(function (el) { el.textContent = p.ourKg; });
     $all(".js-our-price").forEach(function (el) { el.textContent = p.ourPrice; });
+    $all(".js-our-kg-live").forEach(function (el) { if (!el.textContent) el.textContent = p.mkKg; });
   }
 
+  // Prices as a simple menu: single bag + cooler packages. Tap a row to order it.
   function renderPrices() {
-    $(".js-bag-desc").textContent = plainT("bagDesc", { kg: kgText(S.kgPerBag) });
-    $(".js-bag-price").textContent = money(S.pricePerBag);
-    $(".js-bag-max").textContent = plainT("bagMax", { n: S.maxBags });
     var best = bestDealId();
-    var holder = $("#cooler-cards");
-    holder.innerHTML = "";
-    S.packages.forEach(function (p) {
-      var regular = p.bags * S.pricePerBag, save = regular - p.price;
-      var card = document.createElement("article");
-      card.className = "cooler-card" + (p.id === best ? " is-best" : "");
-      card.dataset.choice = p.id;
-      card.innerHTML =
-        (p.id === best ? '<span class="best-badge"></span>' : "") +
-        '<div><p class="price-name"></p><p class="price-desc"></p></div>' +
-        '<div class="cooler-price">' + (save > 0 ? '<s dir="ltr"></s>' : "") + '<b dir="ltr"></b>' +
-        (save > 0 ? '<span class="save-tag"></span>' : "") + "</div>";
-      if (p.id === best) $(".best-badge", card).textContent = plainT("bestDeal");
-      $(".price-name", card).textContent = pkgName(p.id);
-      $(".price-desc", card).textContent = plainT("pkgDesc", { bags: p.bags, kg: kgText(p.bags * S.kgPerBag) });
+    var list = $("#price-list");
+    list.innerHTML = "";
+    var rows = [{ id: "b1", name: plainT("choiceBag1"), bags: 1, price: S.pricePerBag }].concat(
+      S.packages.map(function (p) { return { id: p.id, name: pkgName(p.id), bags: p.bags, price: p.price }; }));
+    rows.forEach(function (r) {
+      var regular = r.bags * S.pricePerBag, save = regular - r.price;
+      var li = document.createElement("li");
+      li.className = "price-row" + (r.id === best ? " is-best" : "");
+      li.innerHTML = '<button type="button" class="price-btn">' +
+        '<span class="pr-name"></span><span class="pr-detail"></span><span class="pr-dots" aria-hidden="true"></span>' +
+        '<span class="pr-price">' + (save > 0 ? '<s dir="ltr"></s>' : "") + '<b dir="ltr"></b></span>' +
+        (save > 0 ? '<span class="pr-save"></span>' : '<span class="pr-save"></span>') + "</button>";
+      li.firstChild.dataset.choice = r.id;
+      $(".pr-name", li).textContent = r.name;
+      $(".pr-detail", li).textContent = r.bags === 1 ? kgText(S.kgPerBag) + " " + plainT("kg")
+        : plainT("pkgDesc", { bags: r.bags, kg: kgText(r.bags * S.kgPerBag) });
+      $(".pr-price b", li).textContent = money(r.price);
       if (save > 0) {
-        $("s", card).textContent = money(regular);
-        $(".save-tag", card).textContent = plainT("save", { save: money(save) });
+        $(".pr-price s", li).textContent = money(regular);
+        $(".pr-save", li).textContent = plainT("save", { save: money(save) }) + (r.id === best ? " · " + plainT("bestDeal") : "");
       }
-      $("b", card).textContent = money(p.price);
-      holder.appendChild(card);
+      list.appendChild(li);
     });
   }
 
@@ -631,136 +631,213 @@
     if (!window.L || !el) return;
     var M = CFG.map, center = [M.centerLat, M.centerLng];
     var map = L.map(el, { center: center, zoom: M.zoom, scrollWheelZoom: false, dragging: !L.Browser.mobile, tap: false });
-    L.tileLayer("https://tile.openstreetmap.org/{z}/{x}/{y}.png", {
-      maxZoom: 19, attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
+    // dark map style (free, from CARTO, based on OpenStreetMap)
+    L.tileLayer("https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png", {
+      maxZoom: 19, subdomains: "abcd",
+      attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> &copy; <a href="https://carto.com/attributions">CARTO</a>'
     }).addTo(map);
     // only the shaded circle: no pin, no house number
-    var circle = L.circle(center, { radius: M.radiusMeters, color: "#1e90d6", weight: 2, dashArray: "6 6", fillColor: "#5bc0eb", fillOpacity: 0.2 }).addTo(map);
+    var circle = L.circle(center, { radius: M.radiusMeters, color: "#5bc0eb", weight: 2, dashArray: "6 6", fillColor: "#5bc0eb", fillOpacity: 0.18 }).addTo(map);
     map.fitBounds(circle.getBounds(), { padding: [16, 16] });
     window.addEventListener("resize", function () { map.invalidateSize(); });
   }
 
-  /* ================= Music ================= */
-  // Music: Spotify's official player, controlled with its iFrame API.
-  // Browsers never allow sound before the visitor touches the page, so the
-  // song starts on their FIRST tap / click / key press anywhere.
-  // The header button then works as play / pause (and we remember "off").
+  /* ================= Music =================
+     "Ice Ice Baby" through YouTube's official player (full song, no login),
+     kept off-screen. Browsers only allow sound after a tap, so the
+     "Tap to enter" screen starts it. Header button = play / pause.
+     If config.js has a musicFile, that file is played instead.        */
+  var music = { start: function () {} };
   function initMusic() {
-    var btn = $("#music-btn"), panel = $("#music-panel"), holder = $("#music-frame-holder");
-    var MUSIC_KEY = "icedrop-music", controller = null, playing = false, wantPlay = false, started = false;
-    var trackId = (String(CFG.spotifyEmbedUrl).match(/track\/([A-Za-z0-9]+)/) || [])[1];
+    var btn = $("#music-btn"), MUSIC_KEY = "icedrop-music";
+    var player = null, ready = false, wantPlay = false, playing = false, audio = null, lastError = null;
     var userOff = false;
     try { userOff = localStorage.getItem(MUSIC_KEY) === "off"; } catch (e) {}
 
-    function show(isPlaying) {
-      playing = isPlaying;
-      btn.classList.toggle("is-playing", isPlaying);
-      btn.setAttribute("aria-pressed", isPlaying ? "true" : "false");
+    function show(on) {
+      playing = on;
+      btn.classList.toggle("is-playing", on);
+      btn.setAttribute("aria-pressed", on ? "true" : "false");
     }
+    var spotify = null, spotifyStarted = false;
     function play() {
       wantPlay = true;
-      if (!controller) return;                     // will start as soon as the player is ready
-      if (!started) { controller.play(); started = true; } else controller.resume();
+      if (audio) { audio.play().then(function () { show(true); }).catch(function () { show(false); }); return; }
+      if (spotify) { if (!spotifyStarted) { spotify.play(); spotifyStarted = true; } else spotify.resume(); return; }
+      if (!ready || lastError) return;             // starts as soon as the player is ready
+      player.unMute();
+      player.setVolume(85);
+      player.playVideo();
     }
-    function pause() { wantPlay = false; if (controller) controller.pause(); show(false); }
-
-    // Fallback: if Spotify's API can't load, the button just opens the normal player
-    function fallback() {
-      if (!holder.querySelector("iframe")) {
-        var f = document.createElement("iframe");
-        f.src = CFG.spotifyEmbedUrl; f.width = "100%"; f.height = "152";
-        f.setAttribute("frameborder", "0");
-        f.setAttribute("allow", "autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture");
-        f.title = "Spotify: Ice Ice Baby";
-        holder.appendChild(f);
-      }
-      panel.classList.add("is-open");
+    function pause() {
+      wantPlay = false;
+      if (audio) audio.pause(); else if (spotify) spotify.pause(); else if (ready) player.pauseVideo();
+      show(false);
     }
 
-    window.onSpotifyIframeApiReady = function (IFrameAPI) {
-      var el = document.createElement("div");
-      holder.appendChild(el);
-      IFrameAPI.createController(el, { uri: "spotify:track:" + trackId, width: "100%", height: 152 }, function (c) {
-        controller = c;
-        c.addListener("playback_update", function (e) { if (e && e.data) show(!e.data.isPaused); });
-        c.addListener("ready", function () { if (wantPlay) play(); });
-        if (wantPlay) play();
-      });
-    };
-    if (trackId) {
+    // Backup: if YouTube won't play the video on other websites, use Spotify's player
+    function useSpotify() {
+      var id = (String(CFG.spotifyEmbedUrl || "").match(/track\/([A-Za-z0-9]+)/) || [])[1];
+      if (!id || window.onSpotifyIframeApiReady) return;
+      window.onSpotifyIframeApiReady = function (api) {
+        var el = document.createElement("div");
+        $("#music-frame-holder").appendChild(el);
+        api.createController(el, { uri: "spotify:track:" + id, width: 300, height: 80 }, function (c) {
+          spotify = c;
+          c.addListener("playback_update", function (e) { if (e && e.data) show(!e.data.isPaused); });
+          if (wantPlay) play();
+        });
+      };
       var sc = document.createElement("script");
       sc.src = "https://open.spotify.com/embed/iframe-api/v1";
       sc.async = true;
-      sc.onerror = function () { btn.dataset.fallback = "1"; };
       document.head.appendChild(sc);
     }
 
-    // First touch anywhere on the page starts the music
-    function firstTouch(e) {
-      if (btn.contains(e.target) || panel.contains(e.target)) return;
-      ["pointerdown", "keydown", "touchend"].forEach(function (ev) { document.removeEventListener(ev, firstTouch, true); });
-      if (CFG.autoPlayMusic !== false && !userOff) play();
+    if (CFG.musicFile) {                           // your own music file
+      audio = new Audio(CFG.musicFile);
+      audio.loop = true;
+      audio.preload = "auto";
+      audio.addEventListener("pause", function () { show(false); });
+      audio.addEventListener("playing", function () { show(true); });
+    } else if (CFG.youtubeVideoId) {
+      window.onYouTubeIframeAPIReady = function () {
+        player = new YT.Player("yt-player", {
+          width: 200, height: 113, videoId: CFG.youtubeVideoId,
+          playerVars: { playsinline: 1, controls: 0, rel: 0, loop: 1, playlist: CFG.youtubeVideoId, start: CFG.musicStartAt || 0 },
+          events: {
+            onReady: function () { ready = true; if (wantPlay) play(); },
+            onStateChange: function (e) { show(e.data === 1 || e.data === 3); },  // 1 playing, 3 buffering
+            onError: function (e) {
+              lastError = e.data;
+              console.warn("Ice Drop: YouTube can't play this video here (error " + e.data + "), switching to Spotify");
+              useSpotify();
+            }
+          }
+        });
+      };
+      var sc = document.createElement("script");
+      sc.src = "https://www.youtube.com/iframe_api";
+      sc.async = true;
+      document.head.appendChild(sc);
     }
-    ["pointerdown", "keydown", "touchend"].forEach(function (ev) { document.addEventListener(ev, firstTouch, true); });
 
+    music.start = function () { if (CFG.autoPlayMusic !== false && !userOff) play(); };
     btn.addEventListener("click", function () {
-      if (btn.dataset.fallback) {                  // Spotify API didn't load: show the normal player
-        if (panel.classList.contains("is-open")) panel.classList.remove("is-open"); else fallback();
-        return;
-      }
       if (playing) { pause(); try { localStorage.setItem(MUSIC_KEY, "off"); } catch (e) {} }
-      else { try { localStorage.removeItem(MUSIC_KEY); } catch (e) {} play(); }
+      else { userOff = false; try { localStorage.removeItem(MUSIC_KEY); } catch (e) {} play(); }
     });
-    $("#music-close").addEventListener("click", function () { panel.classList.remove("is-open"); });
-    setTimeout(function () { if (!controller) btn.dataset.fallback = "1"; }, 10000);
+    window.__iceMusic = function () { return { ready: ready, playing: playing, error: lastError, spotify: !!spotify, state: player && player.getPlayerState ? player.getPlayerState() : null }; };
   }
 
-  /* ================= Photo ================= */
-  function initPhoto() {
-    if (!CFG.photo) return;
-    var img = $("#team-img");
-    img.onload = function () { $("#team").hidden = false; };
-    img.onerror = function () { console.warn("Ice Drop: photo not found: " + CFG.photo); };
-    img.src = CFG.photo;
+  /* ================= Opening screen ("Tap to enter") ================= */
+  function initGate() {
+    var gate = $("#gate");
+    if (!gate) return;
+    var gone = false;
+    function enter(e) {
+      if (gone || (e && e.target.closest("#gate-lang"))) return;
+      gone = true;
+      music.start();                               // must happen inside the tap
+      gate.classList.add("is-leaving");
+      document.body.classList.remove("is-gated");
+      setTimeout(function () { gate.remove(); }, FX.reducedMotion() ? 0 : 900);
+      setTimeout(function () { FX.frostIn(); }, FX.reducedMotion() ? 0 : 250);
+      document.body.classList.add("is-in");
+    }
+    gate.addEventListener("click", enter);
+    gate.addEventListener("keydown", function (e) { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); enter(e); } });
+    $("#gate-lang").addEventListener("click", function () { switchLang(); });
+    setTimeout(function () { var b = $("#gate-btn"); if (b) b.focus({ preventScroll: true }); }, 50);
+  }
+
+  /* ================= Scroll effects ================= */
+  function initScrollFx() {
+    var reduced = FX.reducedMotion();
+    var items = $all("[data-reveal]");
+    if (reduced || !("IntersectionObserver" in window)) items.forEach(function (el) { el.classList.add("is-in"); });
+    else {
+      var io = new IntersectionObserver(function (entries) {
+        entries.forEach(function (en) { if (en.isIntersecting) { en.target.classList.add("is-in"); io.unobserve(en.target); } });
+      }, { threshold: 0.12, rootMargin: "0px 0px -6% 0px" });
+      items.forEach(function (el) { io.observe(el); });
+    }
+
+    var header = $(".site-header"), hero = $(".hero"), cube = $("#hero-cube"), math = $("#math");
+    var barThem = $(".bar-them"), barUs = $(".bar-us"), liveKg = $all(".js-our-kg-live");
+    var panels = $all("[data-parallax] img");
+    var ticking = false;
+    function clamp(v) { return Math.max(0, Math.min(1, v)); }
+    function ease(t) { return 1 - Math.pow(1 - t, 3); }
+
+    function update() {
+      ticking = false;
+      var y = window.scrollY, vh = window.innerHeight;
+      header.classList.toggle("is-solid", y > 40);
+      var p = pitch(), mk = parseFloat(p.mkKg), ours = parseFloat(p.ourKg);
+      if (reduced) {
+        barThem.style.transform = "scaleX(" + (mk / ours) + ")";
+        barUs.style.transform = "scaleX(1)";
+        liveKg.forEach(function (el) { el.textContent = p.ourKg; });
+        return;
+      }
+      // hero: the cube "drops" as you scroll
+      var hp = clamp(y / (hero.offsetHeight * 0.9));
+      cube.style.transform = "translateY(" + (hp * vh * 0.55) + "px) rotate(" + (hp * 38) + "deg) scale(" + (1 - hp * 0.25) + ")";
+      cube.style.opacity = String(1 - hp * 0.6);
+      // the math: bars grow while the section is pinned
+      var r = math.getBoundingClientRect();
+      var mp = clamp(-r.top / Math.max(1, r.height - vh));
+      var grow = ease(clamp(mp * 1.6));
+      barThem.style.transform = "scaleX(" + (mk / ours) * ease(clamp(mp * 2.4)) + ")";
+      barUs.style.transform = "scaleX(" + grow + ")";
+      var kgNow = mk + (ours - mk) * ease(clamp((mp - 0.25) * 2));
+      liveKg.forEach(function (el) { el.textContent = (Math.round(kgNow * 10) / 10).toFixed(1); });
+      math.classList.toggle("is-done", mp > 0.75);
+      // photos move a little slower than the page
+      panels.forEach(function (img) {
+        var b = img.parentNode.getBoundingClientRect();
+        var off = (b.top + b.height / 2 - vh / 2) / vh;
+        img.style.transform = "translateY(" + (off * -40) + "px) scale(1.12)";
+      });
+    }
+    window.addEventListener("scroll", function () { if (!ticking) { ticking = true; requestAnimationFrame(update); } }, { passive: true });
+    window.addEventListener("resize", update);
+    update();
   }
 
   /* ================= Start ================= */
+  function switchLang() {
+    lang = lang === "he" ? "en" : "he";
+    saveLang(lang);
+    clearErrors();
+    renderAll();
+  }
+
   function start() {
     lang = loadLang();
     coolerFx = FX.cooler ? FX.cooler($("#cooler-canvas")) : null;
     initForm();
     renderAll();
     initMusic();
-    initPhoto();
+    initGate();
+    initScrollFx();
     try { initMap(); } catch (e) { console.warn("Ice Drop: map failed", e); }
     $("#year").textContent = new Date().getFullYear();
-    $("#lang-btn").addEventListener("click", function () {
-      lang = lang === "he" ? "en" : "he";
-      saveLang(lang);
-      clearErrors();
-      renderAll();
-      $("#team-img").alt = plainT("teamAlt");
-    });
-    $("#team-img").alt = plainT("teamAlt");
+    $("#lang-btn").addEventListener("click", switchLang);
     loadFromSheet();
     setInterval(updateCountdown, 1000);
     if (FX.touchIce) FX.touchIce($(".hero"), $("#hero-ice"));
 
-    // tapping a price card picks it in the order form
-    $("#prices").addEventListener("click", function (e) {
-      var card = e.target.closest(".cooler-card, .price-bag");
-      if (!card) return;
-      order.choice = card.dataset.choice || "b2";
+    // tapping a price row picks it in the order form
+    $("#price-list").addEventListener("click", function (e) {
+      var row = e.target.closest(".price-btn");
+      if (!row) return;
+      order.choice = row.dataset.choice;
       renderIceChoices();
       updateTotals();
       $("#order").scrollIntoView({ behavior: FX.reducedMotion() ? "auto" : "smooth" });
     });
-
-    // Opening animation: frost creeps over the screen, then clears
-    var frostStarted = false;
-    function startFrost() { if (!frostStarted) { frostStarted = true; FX.frostIn(); } }
-    if (document.readyState === "complete") startFrost();
-    else { window.addEventListener("load", startFrost); setTimeout(startFrost, 1200); }
   }
 
   if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", start);

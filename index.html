@@ -3,8 +3,9 @@
   ICE DROP — main page.
   Words live in js/texts.js (English + Hebrew).
   Prices, delivery days and phone numbers live in the Google Sheet.
-  Site-only settings (Sheet link, map, photo, music) live in js/config.js.
+  Site-only settings (Sheet link, map, music) live in js/config.js.
   Elements with data-t="someKey" get their words from texts.js.
+  Elements with data-reveal slide in when you scroll to them.
 -->
 <html lang="he" dir="rtl">
 <head>
@@ -12,14 +13,14 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <title>Ice Drop</title>
   <meta name="description" content="Ice Drop: 30% more ice than the makolet, delivered to your door in Ra'anana, same price. 30% יותר קרח מהמכולת, עד הדלת ברעננה, באותו מחיר.">
-  <meta name="theme-color" content="#1e90d6">
+  <meta name="theme-color" content="#061a2e">
   <meta property="og:title" content="Ice Drop">
-  <meta property="og:description" content="30% more ice than the makolet. Delivered. Same price.">
+  <meta property="og:description" content="More ice. Same price. At your door.">
   <link rel="icon" href="assets/favicon.svg" type="image/svg+xml">
 
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@500;600;700&family=Heebo:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Frank+Ruhl+Libre:wght@500;700;900&family=Heebo:wght@300;400;500;600;700&family=Montserrat:wght@500;600&display=swap" rel="stylesheet">
 
   <!-- Leaflet map (free, no API key) -->
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
@@ -27,12 +28,32 @@
 
   <link rel="stylesheet" href="css/style.css">
 </head>
-<body>
+<body class="is-gated">
+  <!-- ===== Opening screen: the tap starts the music and the frost ===== -->
+  <div id="gate" class="gate" role="dialog" aria-modal="true" aria-labelledby="gate-name">
+    <button type="button" class="gate-lang" id="gate-lang" data-t="langToggle">English</button>
+    <div class="gate-inner">
+      <img src="assets/img/cube-hero.webp" alt="" class="gate-cube" width="552" height="502">
+      <p class="gate-name" id="gate-name" dir="ltr" lang="en">ICE DROP</p>
+      <button type="button" class="gate-btn" id="gate-btn">
+        <span data-t="gateEnter">Tap to enter</span>
+      </button>
+      <p class="gate-sound">
+        <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M11 5L6 9H3v6h3l5 4V5z"/><path d="M15.5 8.5a5 5 0 0 1 0 7M18.5 5.5a9 9 0 0 1 0 13"/></svg>
+        <span data-t="gateSound">Sound on</span>
+      </p>
+    </div>
+  </div>
+
   <a class="skip-link" href="#order" data-t="skipToForm">Skip to order form</a>
 
-  <!-- ===== Animations (decoration only) =====
-       frost: frost creeps over the screen when the page opens
-       ice-rain: 3D ice cubes fall after an order -->
+  <!-- music player: invisible, plays in the background -->
+  <div id="music-panel" class="music-panel" aria-hidden="true">
+    <div id="music-frame-holder" class="music-frame"><div id="yt-player"></div></div>
+    <button type="button" id="music-close" class="music-close" tabindex="-1">✕</button>
+  </div>
+
+  <!-- ===== Animations (decoration only) ===== -->
   <div id="frost" class="frost" aria-hidden="true"><canvas id="frost-canvas"></canvas></div>
   <canvas id="ice-rain" class="ice-rain" aria-hidden="true"></canvas>
 
@@ -42,14 +63,13 @@
   <header class="site-header">
     <div class="wrap header-inner">
       <a href="#top" class="logo" aria-label="Ice Drop" dir="ltr" lang="en">
-        <img src="assets/logo.svg" alt="" width="40" height="40">
-        <span class="logo-text"><span class="logo-name">ICE DROP</span></span>
+        <img src="assets/logo.svg" alt="" width="34" height="34">
+        <span class="logo-name">ICE DROP</span>
       </a>
       <nav class="nav" aria-label="Main">
-        <a href="#why" data-t="navWhy">Why us</a>
+        <a href="#story" data-t="navWhy">Why us</a>
         <a href="#prices" data-t="navPrices">Prices</a>
         <a href="#area" data-t="navArea">Area</a>
-        <a href="#order" data-t="navOrder">Order</a>
       </nav>
       <div class="header-actions">
         <button type="button" id="music-btn" class="chip chip-music" aria-pressed="false">
@@ -60,129 +80,115 @@
         <button type="button" id="lang-btn" class="chip chip-lang" lang="en" data-t-label="langToggleLabel">
           <span data-t="langToggle">English</span>
         </button>
-      </div>
-    </div>
-    <!-- Spotify player: plays in the background (kept off-screen), music button = play/pause -->
-    <div id="music-panel" class="music-panel">
-      <div class="wrap music-inner">
-        <div id="music-frame-holder" class="music-frame"></div>
-        <button type="button" id="music-close" class="music-close" data-t-label="musicClose">✕</button>
+        <a href="#order" class="chip chip-order" data-t="navOrder">Order</a>
       </div>
     </div>
   </header>
 
   <main id="top">
-    <!-- ===== Hero: the pitch ===== -->
+    <!-- ===== Hero ===== -->
     <section class="hero">
-      <!-- glossy ice cubes you can push around (decoration) -->
       <canvas id="hero-ice" class="hero-ice" aria-hidden="true"></canvas>
       <div class="wrap hero-grid">
         <div class="hero-text">
-          <p class="eyebrow" data-t="heroKicker"></p>
-          <h1 class="hero-title" data-t="heroTitle"></h1>
-          <p class="hero-sub" data-t="heroSub"></p>
-          <div class="hero-ctas">
-            <a href="#order" class="btn btn-primary btn-big" data-t="heroCta">Order ice</a>
-            <a href="#prices" class="btn btn-outline btn-big" data-t="heroCta2">See prices</a>
+          <p class="eyebrow" data-t="heroKicker" data-reveal></p>
+          <h1 class="hero-title" data-t="heroTitle" data-reveal></h1>
+          <p class="hero-sub" data-t="heroSub" data-reveal></p>
+          <div class="hero-ctas" data-reveal>
+            <a href="#order" class="btn btn-ice btn-big" data-t="heroCta">Order ice</a>
+            <a href="#prices" class="btn-link" data-t="heroCta2">See prices</a>
           </div>
           <p class="countdown js-countdown" hidden>
             <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="13" r="8"/><path d="M12 9v4l2.5 2M9 2h6"/></svg>
             <span class="js-countdown-text"></span>
           </p>
+        </div>
+        <div class="hero-visual" aria-hidden="true">
+          <div class="hero-glow"></div>
+          <div class="hero-cube-wrap" id="hero-cube"><img src="assets/img/cube-hero.webp" alt="" width="552" height="502" fetchpriority="high"></div>
+        </div>
+      </div>
+      <a href="#math" class="scroll-hint" aria-hidden="true" tabindex="-1"><span></span></a>
+    </section>
 
-          <!-- Makolet vs Ice Drop (numbers filled in from the settings) -->
-          <div class="compare">
-            <div class="cmp cmp-them">
-              <span class="cmp-name" data-t="cmpMakolet"></span>
-              <span class="cmp-kg"><b class="js-mk-kg" dir="ltr"></b> <span data-t="kg"></span></span>
-              <span class="cmp-price js-mk-price" dir="ltr"></span>
-              <span class="cmp-note" data-t="cmpCarry"></span>
+    <!-- ===== The math (scroll-driven) ===== -->
+    <section class="math" id="math">
+      <div class="math-sticky">
+        <div class="wrap">
+          <p class="eyebrow" data-t="mathEyebrow"></p>
+          <h2 class="math-title" data-t="mathTitle"></h2>
+          <div class="bars">
+            <div class="bar-row">
+              <span class="bar-label" data-t="cmpMakolet"></span>
+              <div class="bar"><i class="bar-fill bar-them"></i></div>
+              <span class="bar-val"><b class="js-mk-kg" dir="ltr"></b> <span data-t="kg"></span> · <span class="js-mk-price" dir="ltr"></span></span>
             </div>
-            <div class="cmp cmp-us">
-              <span class="cmp-badge" data-t="cmpMore"></span>
-              <span class="cmp-name" dir="ltr" lang="en">Ice Drop</span>
-              <span class="cmp-kg"><b class="js-our-kg" dir="ltr"></b> <span data-t="kg"></span></span>
-              <span class="cmp-price js-our-price" dir="ltr"></span>
-              <span class="cmp-note" data-t="cmpDelivered"></span>
+            <div class="bar-row is-us">
+              <span class="bar-label" dir="ltr" lang="en">Ice Drop</span>
+              <div class="bar"><i class="bar-fill bar-us"></i></div>
+              <span class="bar-val"><b class="js-our-kg-live" dir="ltr"></b> <span data-t="kg"></span> · <span class="js-our-price" dir="ltr"></span></span>
             </div>
           </div>
+          <p class="math-foot" data-t="mathFoot"></p>
         </div>
-        <figure class="hero-photo">
-          <img src="assets/img/ice-cubes-tall.jpg" alt="" width="900" height="1323" fetchpriority="high">
-        </figure>
       </div>
     </section>
 
-    <!-- ===== Why us ===== -->
-    <section class="section why" id="why">
+    <!-- ===== Story panels ===== -->
+    <section class="story" id="story">
       <div class="wrap">
-        <h2 class="section-title" data-t="whyTitle"></h2>
-        <div class="why-grid">
-          <article class="why-card">
-            <img class="why-photo" src="assets/img/ice-bag.jpg" alt="" width="511" height="501" loading="lazy">
-            <h3 data-t="why1Title"></h3>
-            <p data-t="why1Text"></p>
-          </article>
-          <article class="why-card">
-            <img class="why-photo" src="assets/img/ice-machine-photo.jpg" alt="" width="510" height="496" loading="lazy">
-            <h3 data-t="why2Title"></h3>
-            <p data-t="why2Text"></p>
-          </article>
-          <article class="why-card">
-            <img class="why-photo" src="assets/img/ice-cubes.jpg" alt="" width="510" height="496" loading="lazy">
-            <h3 data-t="why3Title"></h3>
-            <p data-t="why3Text"></p>
-          </article>
-        </div>
-      </div>
-    </section>
-
-    <!-- ===== Meet the ice guy (shown only when a photo is set in config.js) ===== -->
-    <section class="section team" id="team" hidden>
-      <div class="wrap team-grid">
-        <figure class="team-photo"><img id="team-img" alt="" loading="lazy"></figure>
-        <div>
-          <h2 class="section-title" data-t="teamTitle"></h2>
-          <p class="team-text" data-t="teamText"></p>
-        </div>
-      </div>
-    </section>
-
-    <!-- ===== Prices (built from the Sheet's Settings) ===== -->
-    <section class="section prices" id="prices">
-      <div class="wrap">
-        <h2 class="section-title" data-t="pricesTitle"></h2>
-        <p class="section-sub" data-t="pricesSub"></p>
-        <div class="price-grid">
-          <article class="price-card price-bag">
-            <p class="price-name" data-t="bagTitle"></p>
-            <p class="price-desc js-bag-desc"></p>
-            <p class="price-now"><span class="js-bag-price" dir="ltr"></span> <small data-t="perBag"></small></p>
-            <p class="price-foot js-bag-max"></p>
-          </article>
-          <div class="price-coolers">
-            <p class="price-group-title" data-t="coolersTitle"></p>
-            <div id="cooler-cards" class="cooler-cards"></div>
+        <article class="panel" data-reveal>
+          <figure class="panel-img" data-parallax><img src="assets/img/ice-bag.jpg" alt="" width="511" height="501" loading="lazy"></figure>
+          <div class="panel-text">
+            <p class="eyebrow" data-t="fresh1Eyebrow"></p>
+            <h2 class="panel-title" data-t="fresh1Title"></h2>
+            <p data-t="fresh1Text"></p>
           </div>
+        </article>
+        <article class="panel panel-flip" data-reveal>
+          <figure class="panel-img" data-parallax><img src="assets/img/ice-cubes.jpg" alt="" width="510" height="496" loading="lazy"></figure>
+          <div class="panel-text">
+            <p class="eyebrow" data-t="fresh2Eyebrow"></p>
+            <h2 class="panel-title" data-t="fresh2Title"></h2>
+            <p data-t="fresh2Text"></p>
+          </div>
+        </article>
+      </div>
+    </section>
+
+    <!-- ===== Prices: a simple menu (built from the Sheet's Settings) ===== -->
+    <section class="prices" id="prices">
+      <div class="wrap">
+        <div class="section-head" data-reveal>
+          <p class="eyebrow" data-t="pricesEyebrow"></p>
+          <h2 class="section-title" data-t="pricesTitle"></h2>
+          <p class="section-sub" data-t="pricesSub"></p>
         </div>
+        <ul id="price-list" class="price-list" data-reveal></ul>
       </div>
     </section>
 
     <!-- ===== Delivery area ===== -->
-    <section class="section area" id="area">
-      <div class="wrap">
-        <h2 class="section-title" data-t="areaTitle"></h2>
-        <p class="section-sub" data-t="areaSub"></p>
-        <div id="map" class="map" role="img" data-t-label="mapLabel"></div>
-        <p class="area-note" data-t="areaNote"></p>
+    <section class="area" id="area">
+      <div class="wrap area-grid">
+        <div class="section-head" data-reveal>
+          <p class="eyebrow" data-t="areaEyebrow"></p>
+          <h2 class="section-title" data-t="areaTitle"></h2>
+          <p class="section-sub" data-t="areaSub"></p>
+          <p class="area-note" data-t="areaNote"></p>
+        </div>
+        <div id="map" class="map" role="img" data-t-label="mapLabel" data-reveal></div>
       </div>
     </section>
 
-    <!-- ===== Order form ===== -->
-    <section class="section order" id="order">
+    <!-- ===== Order ===== -->
+    <section class="order" id="order">
       <div class="wrap wrap-narrow">
         <div id="order-form-wrap">
-          <h2 class="section-title" data-t="orderTitle"></h2>
+          <div class="section-head" data-reveal>
+            <p class="eyebrow" data-t="orderEyebrow"></p>
+            <h2 class="section-title" data-t="orderTitle"></h2>
+          </div>
           <form id="order-form" class="order-card" novalidate>
             <p class="countdown countdown-bar js-countdown" hidden>
               <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="13" r="8"/><path d="M12 9v4l2.5 2M9 2h6"/></svg>
@@ -199,7 +205,6 @@
               <div class="cooler-readout"><b id="kg-count" dir="ltr">0</b> <span data-t="kg"></span><small id="bags-count"></small></div>
             </div>
 
-            <!-- How much ice: one tap -->
             <div class="field">
               <span class="label" id="lbl-ice" data-t="fIce"></span>
               <div id="ice-choices" class="ice-choices" role="radiogroup" aria-labelledby="lbl-ice"></div>
@@ -209,7 +214,6 @@
               </div>
             </div>
 
-            <!-- Which day (from the Sheet's Slots tab) -->
             <div class="field">
               <span class="label" id="lbl-slot" data-t="fDay"></span>
               <div id="slot-list" class="slot-chips" role="radiogroup" aria-labelledby="lbl-slot" aria-live="polite"></div>
@@ -263,9 +267,7 @@
           <div class="thanks-check" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></div>
           <h2 class="section-title" id="thanks-title"></h2>
           <p class="thanks-text" data-t="thanksText"></p>
-
           <dl id="confirm-list" class="confirm-list"></dl>
-
           <div id="pay-bit" class="pay-box" hidden>
             <h3 data-t="payBitTitle"></h3>
             <p id="pay-bit-text"></p>
@@ -275,9 +277,7 @@
             </div>
           </div>
           <p id="pay-cash" class="pay-box" hidden></p>
-
           <p class="reminder" data-t="homeReminder"></p>
-
           <a id="wa-order-btn" class="btn btn-wa btn-big btn-block" target="_blank" rel="noopener" href="#">
             <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M21 11.5a8.4 8.4 0 0 1-12.4 7.4L3 21l2.1-5.4A8.4 8.4 0 1 1 21 11.5z"/></svg>
             <span data-t="waSave"></span>
@@ -291,18 +291,21 @@
 
   <footer class="site-footer">
     <div class="wrap footer-inner">
-      <div class="logo logo-footer" dir="ltr" lang="en">
-        <img src="assets/logo.svg" alt="" width="40" height="40">
-        <span class="logo-text"><span class="logo-name">ICE DROP</span></span>
+      <div class="footer-brand">
+        <div class="logo" dir="ltr" lang="en">
+          <img src="assets/logo.svg" alt="" width="34" height="34">
+          <span class="logo-name">ICE DROP</span>
+        </div>
+        <p data-t="footerTag"></p>
       </div>
-      <p data-t="footerTag"></p>
-      <p class="footer-contact" data-t="footerContact"></p>
-      <a class="btn btn-wa js-wa-contact" target="_blank" rel="noopener" href="#">
-        <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M21 11.5a8.4 8.4 0 0 1-12.4 7.4L3 21l2.1-5.4A8.4 8.4 0 1 1 21 11.5z"/></svg>
-        <span class="js-wa-number" dir="ltr"></span>
-      </a>
-      <p class="footer-small" data-t="footerMade"></p>
-      <p class="footer-small">© <span id="year"></span> <span dir="ltr" lang="en">Ice Drop</span></p>
+      <div class="footer-contact-wrap">
+        <p class="footer-contact" data-t="footerContact"></p>
+        <a class="btn btn-wa js-wa-contact" target="_blank" rel="noopener" href="#">
+          <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M21 11.5a8.4 8.4 0 0 1-12.4 7.4L3 21l2.1-5.4A8.4 8.4 0 1 1 21 11.5z"/></svg>
+          <span class="js-wa-number" dir="ltr"></span>
+        </a>
+      </div>
+      <p class="footer-small">© <span id="year"></span> <span dir="ltr" lang="en">Ice Drop</span> · <span data-t="footerMade"></span></p>
     </div>
   </footer>
 
