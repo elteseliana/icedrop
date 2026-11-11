@@ -49,7 +49,7 @@ window.ICE_DROP_CONFIG = {
   musicFile: "",
 
   /* ---------- LANGUAGE ---------- */
-  defaultLanguage: "he",   // "he" = Hebrew first, "en" = English first
+  defaultLanguage: "en",   // "en" = English first, "he" = Hebrew first
 
   currency: "₪",
 
