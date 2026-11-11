@@ -56,7 +56,6 @@
         <span class="logo-name">ICE DROP</span>
       </a>
       <nav class="nav" aria-label="Main">
-        <a href="#prices" data-t="navPrices">Prices</a>
         <a href="#area" data-t="navArea">Area</a>
       </nav>
       <div class="header-actions">
@@ -84,7 +83,7 @@
           <p class="hero-sub" data-t="heroSub" data-reveal></p>
           <div class="hero-ctas" data-reveal>
             <a href="#order" class="btn btn-ice btn-big" data-t="heroCta">Order ice</a>
-            <a href="#prices" class="btn-link" data-t="heroCta2">See prices</a>
+            <a href="#area" class="btn-link" data-t="heroCta2">Delivery area</a>
           </div>
           <ul class="hero-facts" data-reveal>
             <li data-t="fact1"></li>
@@ -101,31 +100,6 @@
           <div class="hero-glow"></div>
           <div class="hero-cube-wrap" id="hero-cube"><img src="assets/img/cube-hero.webp" alt="" width="552" height="502" fetchpriority="high"></div>
         </div>
-      </div>
-    </section>
-
-    <!-- ===== Prices: a simple menu (built from the Sheet's Settings) ===== -->
-    <section class="prices" id="prices">
-      <div class="wrap">
-        <div class="section-head" data-reveal>
-          <p class="eyebrow" data-t="pricesEyebrow"></p>
-          <h2 class="section-title" data-t="pricesTitle"></h2>
-          <p class="section-sub" data-t="pricesSub"></p>
-        </div>
-        <ul id="price-list" class="price-list" data-reveal></ul>
-      </div>
-    </section>
-
-    <!-- ===== Delivery area ===== -->
-    <section class="area" id="area">
-      <div class="wrap area-grid">
-        <div class="section-head" data-reveal>
-          <p class="eyebrow" data-t="areaEyebrow"></p>
-          <h2 class="section-title" data-t="areaTitle"></h2>
-          <p class="section-sub" data-t="areaSub"></p>
-          <p class="area-note" data-t="areaNote"></p>
-        </div>
-        <div id="map" class="map" role="img" data-t-label="mapLabel" data-reveal></div>
       </div>
     </section>
 
@@ -159,6 +133,7 @@
                 <label><input type="radio" name="orderType" value="once" checked><span data-t="typeOnce"></span></label>
                 <label><input type="radio" name="orderType" value="weekly"><span data-t="typeWeekly"></span></label>
               </div>
+              <p class="hint type-hint" data-t="deliveryIncluded"></p>
             </div>
 
             <div class="field">
@@ -244,6 +219,19 @@
         </div>
       </div>
     </section>
+    <!-- ===== Delivery area ===== -->
+    <section class="area" id="area">
+      <div class="wrap area-grid">
+        <div class="section-head" data-reveal>
+          <p class="eyebrow" data-t="areaEyebrow"></p>
+          <h2 class="section-title" data-t="areaTitle"></h2>
+          <p class="section-sub" data-t="areaSub"></p>
+          <p class="area-note" data-t="areaNote"></p>
+        </div>
+        <div id="map" class="map" role="img" data-t-label="mapLabel" data-reveal></div>
+      </div>
+    </section>
+
   </main>
 
   <footer class="site-footer">

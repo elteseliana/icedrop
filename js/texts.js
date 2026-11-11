@@ -10,6 +10,7 @@
 
 window.ICE_DROP_TEXTS = {
   en: {
+    deliveryIncluded: "Weekly members and one-time orders both come with delivery included.",
     statusWeeklyBit: "Bit · weekly payment request",
     deliveriesLabel: "Deliveries:",
     waPauseMsg: "Hi Ice Drop! I'd like to pause/cancel my weekly order #{id}. My name is {name}.",
@@ -30,7 +31,7 @@ window.ICE_DROP_TEXTS = {
     orderEyebrow: "Order",
     areaEyebrow: "Area",
     pricesEyebrow: "Menu",
-    heroCta2: "See prices",
+    heroCta2: "Delivery area",
     countdown: "Orders for {day} close in <b>{time}</b>",
     cdDays: "{n}d ",
     cdDay1: "1d ",
@@ -72,7 +73,7 @@ window.ICE_DROP_TEXTS = {
 
     areaTitle: "Where we deliver",
     areaSub: "We deliver within ~10 min walk of Ahi Dakar St.",
-    areaNote: "<b>Inside the circle? Order away!</b> Not sure? Order anyway and we'll let you know.",
+    areaNote: "<b>Inside the marked area? Order away!</b> Not sure? Order anyway and we'll let you know.",
     mapLabel: "Map of the Ice Drop delivery area",
 
 
@@ -140,6 +141,7 @@ window.ICE_DROP_TEXTS = {
   },
 
   he: {
+    deliveryIncluded: "גם מנויים שבועיים וגם הזמנות חד-פעמיות כוללים משלוח.",
     statusWeeklyBit: "ביט · בקשת תשלום שבועית",
     deliveriesLabel: "משלוחים:",
     waPauseMsg: "היי Ice Drop! אני רוצה להשהות/לבטל את ההזמנה השבועית #{id}. השם שלי {name}.",
@@ -160,7 +162,7 @@ window.ICE_DROP_TEXTS = {
     orderEyebrow: "הזמנה",
     areaEyebrow: "אזור",
     pricesEyebrow: "תפריט",
-    heroCta2: "למחירים",
+    heroCta2: "אזור המשלוחים",
     countdown: "ההזמנות ל{day} נסגרות בעוד <b>{time}</b>",
     cdDays: "{n} ימים ו-",
     cdDay1: "יום ו-",
@@ -202,7 +204,7 @@ window.ICE_DROP_TEXTS = {
 
     areaTitle: "לאן אנחנו מגיעים",
     areaSub: "אנחנו מגיעים עד כ-10 דקות הליכה מרחוב אח״י דקר.",
-    areaNote: "<b>בתוך העיגול? תזמינו!</b> לא בטוחים? הזמינו בכל זאת ונעדכן אתכם.",
+    areaNote: "<b>בתוך האזור המסומן? תזמינו!</b> לא בטוחים? הזמינו בכל זאת ונעדכן אתכם.",
     mapLabel: "מפת אזור המשלוחים של Ice Drop",
 
 

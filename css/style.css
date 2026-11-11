@@ -290,6 +290,7 @@ html[dir="rtl"] input[dir="ltr"] { text-align: right; }
 .pause-link { display: block; margin: 10px 0 4px; color: var(--wa-dk); font-size: .88rem; }
 .pr-price small { color: var(--dim); font-size: .78rem; margin-inline-start: 4px; }
 
+.type-hint { margin: 8px 2px 0; font-size: .82rem; color: var(--muted); }
 .more { margin: -4px 0 16px; }
 .more summary { cursor: pointer; color: var(--blue); font-weight: 500; font-size: .9rem; list-style: none; display: inline-block; }
 .more summary::-webkit-details-marker { display: none; }

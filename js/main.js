@@ -126,6 +126,7 @@
   function renderPrices() {
     var best = bestDealId();
     var list = $("#price-list");
+    if (!list) return;                             // (the price list section was removed)
     list.innerHTML = "";
     var rows = [{ id: "b1", name: plainT("choiceBag1"), bags: 1, price: S.pricePerBag }].concat(
       S.packages.map(function (p) { return { id: p.id, name: pkgName(p.id), bags: p.bags, price: p.price }; }));
@@ -801,7 +802,7 @@
     if (FX.touchIce) FX.touchIce($(".hero"), $("#hero-ice"));
 
     // tapping a price row picks it in the order form
-    $("#price-list").addEventListener("click", function (e) {
+    if ($("#price-list")) $("#price-list").addEventListener("click", function (e) {
       var row = e.target.closest(".price-btn");
       if (!row) return;
       order.choice = row.dataset.choice;
