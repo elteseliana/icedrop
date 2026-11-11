@@ -626,7 +626,6 @@
           thanks.scrollIntoView({ behavior: FX.reducedMotion() ? "auto" : "smooth", block: "start" });
           thanks.focus({ preventScroll: true });
           FX.celebrate();
-          music.start();                           // celebrate the order with the song (unless they turned music off)
           // the slot now has fewer bags left
           var s = slotById(order.slotId);
           if (s) { s.remaining -= c.totalBags; s.soldOut = s.remaining <= 0; }
@@ -685,60 +684,33 @@
   }
 
   /* ================= Music =================
-     "Ice Ice Baby" through YouTube's official player (full song, no login),
-     kept off-screen. Browsers only allow sound after a tap, so the
-     "Tap to enter" screen starts it. Header button = play / pause.
-     If config.js has a musicFile, that file is played instead.        */
-  var music = { start: function () {} };
+     "Ice Ice Baby" only plays when someone taps the music button in the
+     header (tap again to stop). It uses Spotify's player, kept hidden.
+     Phones only allow sound when the tap lands on the player itself, so if
+     the song hasn't started a moment after the tap, a small bar with the
+     Spotify player slides up: one tap on its play button starts it.
+     If config.js has a musicFile, that file is played instead.          */
   function initMusic() {
-    var btn = $("#music-btn"), MUSIC_KEY = "icedrop-music";
-    var player = null, ready = false, wantPlay = false, playing = false, audio = null, lastError = null;
-    var userOff = false;
-    try { userOff = localStorage.getItem(MUSIC_KEY) === "off"; } catch (e) {}
+    var btn = $("#music-btn"), panel = $("#music-panel");
+    var spotify = null, started = false, wantPlay = false, playing = false, audio = null, dockTimer = null;
 
-    var panel = $("#music-panel"), dockTimer = null;
-    function dock(open) {                          // the small music bar at the bottom
-      panel.classList.toggle("is-dock", open);
-    }
+    function dock(open) { panel.classList.toggle("is-dock", open); }
     function show(on) {
       if (on && panel.classList.contains("is-dock")) { clearTimeout(dockTimer); dockTimer = setTimeout(function () { dock(false); }, 1800); }
       playing = on;
       btn.classList.toggle("is-playing", on);
       btn.setAttribute("aria-pressed", on ? "true" : "false");
     }
-    var spotify = null, spotifyStarted = false;
     function play() {
       wantPlay = true;
       if (audio) { audio.play().then(function () { show(true); }).catch(function () { show(false); }); return; }
-      if (spotify) { if (!spotifyStarted) { spotify.play(); spotifyStarted = true; } else spotify.resume(); return; }
-      if (!ready || lastError) return;             // starts as soon as the player is ready
-      player.unMute();
-      player.setVolume(85);
-      player.playVideo();
+      if (!spotify) return;                        // starts as soon as the player has loaded
+      if (!started) { spotify.play(); started = true; } else spotify.resume();
     }
     function pause() {
       wantPlay = false;
-      if (audio) audio.pause(); else if (spotify) spotify.pause(); else if (ready) player.pauseVideo();
+      if (audio) audio.pause(); else if (spotify) spotify.pause();
       show(false);
-    }
-
-    // Backup: if YouTube won't play the video on other websites, use Spotify's player
-    function useSpotify() {
-      var id = (String(CFG.spotifyEmbedUrl || "").match(/track\/([A-Za-z0-9]+)/) || [])[1];
-      if (!id || window.onSpotifyIframeApiReady) return;
-      window.onSpotifyIframeApiReady = function (api) {
-        var el = document.createElement("div");
-        $("#music-frame-holder").appendChild(el);
-        api.createController(el, { uri: "spotify:track:" + id, width: "100%", height: 80 }, function (c) {
-          spotify = c;
-          c.addListener("playback_update", function (e) { if (e && e.data) show(!e.data.isPaused); });
-          if (wantPlay) play();
-        });
-      };
-      var sc = document.createElement("script");
-      sc.src = "https://open.spotify.com/embed/iframe-api/v1";
-      sc.async = true;
-      document.head.appendChild(sc);
     }
 
     if (CFG.musicFile) {                           // your own music file
@@ -747,59 +719,32 @@
       audio.preload = "auto";
       audio.addEventListener("pause", function () { show(false); });
       audio.addEventListener("playing", function () { show(true); });
-    } else if (CFG.youtubeVideoId) {
-      window.onYouTubeIframeAPIReady = function () {
-        player = new YT.Player("yt-player", {
-          width: 200, height: 113, videoId: CFG.youtubeVideoId,
-          playerVars: { playsinline: 1, controls: 0, rel: 0, loop: 1, playlist: CFG.youtubeVideoId, start: CFG.musicStartAt || 0 },
-          events: {
-            onReady: function () { ready = true; if (wantPlay) play(); },
-            onStateChange: function (e) { show(e.data === 1 || e.data === 3); },  // 1 playing, 3 buffering
-            onError: function (e) {
-              lastError = e.data;
-              var yt = $("#yt-player");
-              if (yt) yt.style.display = "none";              // hide the blocked YouTube player
-              console.warn("Ice Drop: YouTube can't play this video here (error " + e.data + "), switching to Spotify");
-              useSpotify();
-            }
-          }
-        });
-      };
-      var sc = document.createElement("script");
-      sc.src = "https://www.youtube.com/iframe_api";
-      sc.async = true;
-      document.head.appendChild(sc);
+    } else {
+      var id = (String(CFG.spotifyEmbedUrl || "").match(/track\/([A-Za-z0-9]+)/) || [])[1];
+      if (id) {
+        window.onSpotifyIframeApiReady = function (api) {
+          var el = document.createElement("div");
+          $("#music-frame-holder").appendChild(el);
+          api.createController(el, { uri: "spotify:track:" + id, width: "100%", height: 80 }, function (c) {
+            spotify = c;
+            c.addListener("playback_update", function (e) { if (e && e.data) show(!e.data.isPaused); });
+            if (wantPlay) play();
+          });
+        };
+        var sc = document.createElement("script");
+        sc.src = "https://open.spotify.com/embed/iframe-api/v1";
+        sc.async = true;
+        document.head.appendChild(sc);
+      }
     }
 
-    music.start = function () {
-      if (CFG.autoPlayMusic === false || userOff) return;
-      play();
-      // phones often block music that isn't started by a tap on the player itself:
-      // if it hasn't started after 2.5 s, show the little music bar
-      setTimeout(function () { if (!playing) dock(true); }, 2500);
-    };
     $("#music-close").addEventListener("click", function () { dock(false); });
     btn.addEventListener("click", function () {
-      if (playing) { pause(); try { localStorage.setItem(MUSIC_KEY, "off"); } catch (e) {} return; }
-      userOff = false;
-      try { localStorage.removeItem(MUSIC_KEY); } catch (e) {}
+      if (playing) { pause(); return; }
       play();
       if (!audio) setTimeout(function () { if (!playing) dock(true); }, 1200);
     });
-    window.__iceMusic = function () { return { ready: ready, playing: playing, error: lastError, spotify: !!spotify, state: player && player.getPlayerState ? player.getPlayerState() : null }; };
-  }
-
-  /* ================= Music on the first tap =================
-     Browsers only allow sound after the visitor touches the page, so the
-     song starts on their first tap / click / key press anywhere.       */
-  function initFirstTap() {
-    var evs = ["pointerdown", "touchend", "keydown"];
-    function first(e) {
-      if (e.target.closest && e.target.closest("#music-btn, #music-panel")) return;  // those handle themselves
-      evs.forEach(function (ev) { document.removeEventListener(ev, first, true); });
-      music.start();
-    }
-    evs.forEach(function (ev) { document.addEventListener(ev, first, true); });
+    window.__iceMusic = function () { return { playing: playing, spotify: !!spotify }; };
   }
 
   /* ================= Scroll effects ================= */
@@ -847,7 +792,6 @@
     initForm();
     renderAll();
     initMusic();
-    initFirstTap();
     initScrollFx();
     try { initMap(); } catch (e) { console.warn("Ice Drop: map failed", e); }
     $("#year").textContent = new Date().getFullYear();

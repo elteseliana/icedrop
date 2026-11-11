@@ -41,20 +41,12 @@ window.ICE_DROP_CONFIG = {
   },
 
   /* ---------- MUSIC ----------
-     Plays when the visitor taps "Tap to enter" (browsers don't allow
-     sound before a tap). Uses YouTube's official video player.
-     youtubeVideoId: the part after "watch?v=" in a YouTube link.
-     musicStartAt:   second to start from (0 = the beginning).
-     musicFile:      optional: a music file of your own that you have the
-                     rights to use, e.g. "assets/audio/song.mp3".
-                     When set, it is played instead of YouTube.
-     autoPlayMusic:  false = only play when the music button is pressed. */
-  youtubeVideoId: "rog8ou-ZepE",     // Vanilla Ice - Ice Ice Baby (official video, vanillaiceVEVO)
-  // backup if YouTube refuses to play the video on other websites:
+     "Ice Ice Baby" plays only when someone taps the music button at the
+     top of the page (Spotify's player). Nothing plays by itself.
+     musicFile: optional, a music file of your own that you have the rights
+                to use, e.g. "assets/audio/song.mp3" (played instead).   */
   spotifyEmbedUrl: "https://open.spotify.com/embed/track/11d9oUiwHuYt216EFA2tiz",
-  musicStartAt: 0,
   musicFile: "",
-  autoPlayMusic: true,
 
   /* ---------- LANGUAGE ---------- */
   defaultLanguage: "he",   // "he" = Hebrew first, "en" = English first
