@@ -60,6 +60,7 @@ window.ICE_DROP_CONFIG = {
     pricePerBag: 6,           // weekly price
     oneTimeMarkup: 20,        // one-time orders cost 20% more
     kgPerBag: 1.3,
+    minBags: 2,               // smallest order (no single bags)
     maxBags: 4,
     packages: [
       { id: "quarter", bags: 5,  price: 28 },

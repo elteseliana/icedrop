@@ -92,6 +92,7 @@
   // Weekly = the prices in the Sheet. One-time = those + the one-time increase (e.g. 20%), whole shekels.
   function up(price, weekly) { return weekly ? price : Math.round(price * (1 + (S.oneTimeMarkup || 0) / 100)); }
   function bagPrice(weekly) { return up(S.pricePerBag, weekly); }
+  function minBags() { return Math.max(1, S.minBags || 2); }       // smallest order (from the Sheet, default 2)
   function bestDealId() {
     var best = null;
     S.packages.forEach(function (p) {
@@ -105,7 +106,7 @@
     var bags = 0, pkg = null;
     if (/^b\d+$/.test(order.choice)) bags = Math.min(S.maxBags, parseInt(order.choice.slice(1), 10));
     else pkg = pkgById(order.choice);
-    if (!bags && !pkg) { bags = Math.min(2, S.maxBags); order.choice = "b" + bags; }
+    if ((!bags && !pkg) || (bags && bags < minBags())) { bags = Math.min(minBags(), S.maxBags); order.choice = "b" + bags; }
     var w = order.weekly, unit = bagPrice(w);
     var totalBags = bags + (pkg ? pkg.bags : 0);
     var regular = totalBags * unit;
@@ -128,7 +129,7 @@
     var list = $("#price-list");
     if (!list) return;                             // (the price list section was removed)
     list.innerHTML = "";
-    var rows = [{ id: "b1", name: plainT("choiceBag1"), bags: 1, price: S.pricePerBag }].concat(
+    var rows = [{ id: "b" + minBags(), name: plainT("choiceBags", { n: minBags() }), bags: minBags(), price: S.pricePerBag * minBags() }].concat(
       S.packages.map(function (p) { return { id: p.id, name: pkgName(p.id), bags: p.bags, price: p.price }; }));
     rows.forEach(function (r) {
       var li = document.createElement("li");
@@ -156,7 +157,7 @@
     var best = bestDealId();
     var bagRow = document.createElement("div");
     bagRow.className = "ice-row ice-bags";
-    for (var n = 1; n <= S.maxBags; n++) {
+    for (var n = minBags(); n <= S.maxBags; n++) {                    // minimum order: 2 bags
       bagRow.appendChild(iceOption("b" + n, n === 1 ? plainT("choiceBag1") : plainT("choiceBags", { n: n }),
         kgText(n * S.kgPerBag) + " " + plainT("kg"), n * bagPrice(order.weekly), 0, false));
     }

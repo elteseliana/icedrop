@@ -46,6 +46,7 @@ var SETTINGS = [
   ["Price per bag (₪)",          6,   "Price of one bag (weekly price)"],
   ["One-time price increase (%)", 20, "One-time orders cost this much more than weekly (rounded to whole ₪). Delivery is always free."],
   ["Kg per bag",                 1.3, "How much ice is in one bag"],
+  ["Min bags per order",         2,   "Smallest order (no single bags)"],
   ["Max single bags",            4,   "Most loose bags someone can pick (bigger orders = cooler package)"],
   ["Quarter cooler bags",        5,   "Bags in a ¼ cooler"],
   ["Quarter cooler price (₪)",   28,  "Price of a ¼ cooler"],
@@ -158,6 +159,7 @@ function doPost(e) {
     var weekly = d.orderType === "weekly";
     var p = price_(settings, d.bags, d.cooler, weekly);
     if (p.totalBags < 1) return json_({ ok: false, error: "no_ice" });
+    if (p.totalBags < s_min_(settings)) return json_({ ok: false, error: "min_order", min: s_min_(settings) });
 
     // Check the slot is still open and has room (we hold the lock)
     var slots = listSlots_(settings);
@@ -213,6 +215,7 @@ function readSettings_() {
     pricePerBag: num("Price per bag (₪)"),
     oneTimeMarkup: num("One-time price increase (%)"),
     kgPerBag: num("Kg per bag"),
+    minBags: num("Min bags per order"),
     maxBags: num("Max single bags"),
     packages: [
       { id: "quarter", bags: num("Quarter cooler bags"), price: num("Quarter cooler price (₪)") },
@@ -229,9 +232,10 @@ function readSettings_() {
     alertEmail: String(s["Alert email"] || "")
   };
 }
+function s_min_(s) { return Math.max(1, Number(s.minBags) || 2); }
 function defaultOf_(k) { for (var i = 0; i < SETTINGS.length; i++) if (SETTINGS[i][0] === k) return SETTINGS[i][1]; return 0; }
 function publicSettings_(s) {
-  return { pricePerBag: s.pricePerBag, oneTimeMarkup: s.oneTimeMarkup, kgPerBag: s.kgPerBag, maxBags: s.maxBags, packages: s.packages,
+  return { pricePerBag: s.pricePerBag, oneTimeMarkup: s.oneTimeMarkup, kgPerBag: s.kgPerBag, minBags: s.minBags, maxBags: s.maxBags, packages: s.packages,
            bitNumber: s.bitNumber, whatsappNumber: s.whatsappNumber, cutoff: s.cutoff };
 }
 
