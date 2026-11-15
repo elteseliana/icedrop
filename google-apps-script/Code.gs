@@ -46,7 +46,7 @@ var SETTINGS = [
   ["Price per bag (₪)",          6,   "Price of one bag (weekly price)"],
   ["One-time price increase (%)", 20, "One-time orders cost this much more than weekly (rounded to whole ₪). Delivery is always free."],
   ["Kg per bag",                 1.3, "How much ice is in one bag"],
-  ["Min bags per order",         2,   "Smallest order (no single bags)"],
+  ["Min bags per order",         3,   "Smallest order (in bags)"],
   ["Max single bags",            4,   "Most loose bags someone can pick (bigger orders = cooler package)"],
   ["Quarter cooler bags",        5,   "Bags in a ¼ cooler"],
   ["Quarter cooler price (₪)",   28,  "Price of a ¼ cooler"],
@@ -232,7 +232,7 @@ function readSettings_() {
     alertEmail: String(s["Alert email"] || "")
   };
 }
-function s_min_(s) { return Math.max(1, Number(s.minBags) || 2); }
+function s_min_(s) { return Math.max(1, Number(s.minBags) || 3); }
 function defaultOf_(k) { for (var i = 0; i < SETTINGS.length; i++) if (SETTINGS[i][0] === k) return SETTINGS[i][1]; return 0; }
 function publicSettings_(s) {
   return { pricePerBag: s.pricePerBag, oneTimeMarkup: s.oneTimeMarkup, kgPerBag: s.kgPerBag, minBags: s.minBags, maxBags: s.maxBags, packages: s.packages,

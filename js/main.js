@@ -39,13 +39,15 @@
 
   // The makolet comparison numbers, worked out from the prices
   function pitch() {
+    // uses the smallest order: 3 bags = 3.9 kg for ₪18; the makolet gives 3 kg for ₪18
     var mk = CFG.makolet;
-    var bagsForSamePrice = mk.price / S.pricePerBag;            // 12 / 6 = 2 bags
-    var ourKg = bagsForSamePrice * S.kgPerBag;                   // 2 × 1.3 = 2.6 kg
+    var ourPrice = minBags() * S.pricePerBag;
+    var ourKg = minBags() * S.kgPerBag;
+    var mkKg = mk.kg * ourPrice / mk.price;
     return {
-      pct: Math.round((ourKg / mk.kg - 1) * 100),                // 30
-      mkKg: kgText(mk.kg), mkPrice: money(mk.price),
-      ourKg: kgText(ourKg), ourPrice: money(mk.price)
+      pct: Math.round((ourKg / mkKg - 1) * 100),                 // 30
+      mkKg: kgText(mkKg), mkPrice: money(ourPrice),
+      ourKg: kgText(ourKg), ourPrice: money(ourPrice)
     };
   }
 
@@ -92,7 +94,7 @@
   // Weekly = the prices in the Sheet. One-time = those + the one-time increase (e.g. 20%), whole shekels.
   function up(price, weekly) { return weekly ? price : Math.round(price * (1 + (S.oneTimeMarkup || 0) / 100)); }
   function bagPrice(weekly) { return up(S.pricePerBag, weekly); }
-  function minBags() { return Math.max(1, S.minBags || 2); }       // smallest order (from the Sheet, default 2)
+  function minBags() { return Math.max(1, S.minBags || 3); }       // smallest order (from the Sheet, default 3)
   function bestDealId() {
     var best = null;
     S.packages.forEach(function (p) {
