@@ -169,13 +169,9 @@
               <p class="err" id="err-street"></p>
             </div>
 
-            <div class="field">
-              <div class="seg" role="radiogroup" aria-label="Payment">
-                <label><input type="radio" name="payment" value="bit"><span data-t="payBit"></span></label>
-                <label><input type="radio" name="payment" value="cash"><span data-t="payCash"></span></label>
-              </div>
-              <p class="err" id="err-payment"></p>
-            </div>
+            <!-- Payment: Bit / PayBox only -->
+            <input type="hidden" name="payment" value="bit">
+            <p class="pay-note" data-t="payBitOnly"></p>
 
             <details class="more">
               <summary data-t="moreOptions"></summary>

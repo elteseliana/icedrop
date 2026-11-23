@@ -58,10 +58,7 @@ var SETTINGS = [
   ["WhatsApp number",            "058-590-9980", "Gets the WhatsApp order summaries"],
   ["Order cutoff time",          "20:00", "Orders close at this time the night before each delivery day"],
   ["Default capacity (bags)",    30,  "Used when a slot's Capacity is empty"],
-  ["Delivery days",              "Monday, Friday", "The Slots tab adds these days by itself for this week + next week. Empty = add days by hand."],
-  ["Monday delivery time",       "16:15-17:30", "Time window for Monday deliveries"],
   ["Monday order cutoff",        "Sunday 20:00", "When Monday orders close (day + time)"],
-  ["Friday delivery time",       "13:30-15:00", "Time window for Friday deliveries"],
   ["Friday order cutoff",        "Friday 09:00", "When Friday orders close (day + time)"],
   ["Weeks shown on site",        2,   "How many weeks of delivery days the website shows (2 = this week and next week)"],
   ["Alert email",                "",  "Who gets an email per order (empty = the sheet owner)"]
@@ -136,7 +133,6 @@ function setup() {
 function doGet(e) {
   try {
     var settings = readSettings_();
-    try { fillUpcomingSlots_(settings); } catch (fillErr) { console.error(fillErr); }   // never block the website
     return json_({ ok: true, settings: publicSettings_(settings), slots: listSlots_(settings) });
   } catch (err) {
     return json_({ ok: false, error: String(err) });
@@ -171,8 +167,8 @@ function doPost(e) {
     }
 
     var id = nextOrderId_();
-    var payMethod = d.payment === "bit" ? "Bit / PayBox" : "Cash on delivery";
-    var payStatus = d.payment === "bit" ? "Awaiting payment" : "Pay on delivery";
+    var payMethod = "Bit / PayBox";                    // Bit / PayBox only, no cash
+    var payStatus = "Awaiting payment";
     var sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(TAB_ORDERS);
     ensureHeaders_(sheet);
     var row = [
@@ -262,15 +258,18 @@ function listSlots_(s) {
   var ss = SpreadsheetApp.getActiveSpreadsheet();
   var sh = ss.getSheetByName(TAB_SLOTS);
   if (!sh || sh.getLastRow() < 2) return [];
+  // The site shows exactly the rows in the Slots tab: Open ticked, today or later,
+  // with the time from column C. A date that has ANY unticked row is closed.
   var now = Utilities.formatDate(new Date(), TZ, "yyyy-MM-dd HH:mm");
-  var last = lastShownDate_(s);
+  var today = now.slice(0, 10);
   var used = bagsUsed_();
   var out = [];
-  sh.getRange(2, 1, sh.getLastRow() - 1, 5).getValues().forEach(function (r) {
+  var rows = sh.getRange(2, 1, sh.getLastRow() - 1, 5).getValues();
+  var closed = {};
+  rows.forEach(function (r) { var d = dateText_(r[0]); if (d && !isOpen_(r[4])) closed[d] = true; });
+  rows.forEach(function (r) {
     var date = dateText_(r[0]);
-    if (!date || date > last) return;                                  // only this week + next week
-    var open = r[4] === true || String(r[4]).toUpperCase() === "TRUE";
-    if (!open) return;
+    if (!date || date < today || closed[date] || !isOpen_(r[4])) return;
     var cutoff = cutoffFor_(s, date);                                  // e.g. Friday 09:00, or Sunday 20:00 for Monday
     if (now >= cutoff) return;
     var win = timeText_(r[2]);
@@ -314,7 +313,7 @@ function ensureHeaders_(sh) {
   });
 }
 
-/* ---------- Delivery days: this week + next week fill themselves in ---------- */
+/* ---------- Delivery days come only from the Slots tab ---------- */
 var DAY_NAMES = { sunday: 0, monday: 1, tuesday: 2, wednesday: 3, thursday: 4, friday: 5, saturday: 6,
                   "ראשון": 0, "שני": 1, "שלישי": 2, "רביעי": 3, "חמישי": 4, "שישי": 5, "שבת": 6 };
 function dayNumbers_(text) {
@@ -346,38 +345,21 @@ function cutoffFor_(s, date) {
 }
 function todayIso_() { return Utilities.formatDate(new Date(), TZ, "yyyy-MM-dd"); }
 // last day the site shows: the Saturday at the end of next week (with "Weeks shown on site" = 2)
+function isOpen_(v) { return v === true || String(v).trim().toUpperCase() === "TRUE"; }
+function openDates_() {
+  var sh = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(TAB_SLOTS), open = {}, closed = {};
+  if (!sh || sh.getLastRow() < 2) return open;
+  sh.getRange(2, 1, sh.getLastRow() - 1, 5).getValues().forEach(function (r) {
+    var d = dateText_(r[0]); if (!d) return;
+    if (isOpen_(r[4])) open[d] = true; else closed[d] = true;
+  });
+  Object.keys(closed).forEach(function (d) { delete open[d]; });
+  return open;
+}
 function lastShownDate_(s) {
   var today = todayIso_();
   return shiftDate_(today, (6 - weekday_(today)) + 7 * (s.weeksShown - 1));
 }
-// Adds a row for every delivery day (e.g. Monday + Friday) that's missing, for this week + next week.
-// The time window is left empty for you to type in.
-function fillUpcomingSlots_(s) {
-  if (!s.deliveryDays.length) return 0;
-  var sh = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(TAB_SLOTS);
-  if (!sh) return 0;
-  var lock = LockService.getScriptLock();
-  if (!lock.tryLock(5000)) return 0;
-  try {
-    var have = {};
-    if (sh.getLastRow() > 1) sh.getRange(2, 1, sh.getLastRow() - 1, 3).getValues().forEach(function (r, i) {
-      var d = dateText_(r[0]);
-      have[d] = true;
-      var rule = d && s.dayRules[weekday_(d)];
-      if (rule && rule.time && !String(r[2]).trim()) sh.getRange(i + 2, 3).setValue(rule.time);   // fill in an empty time
-    });
-    var today = todayIso_(), last = lastShownDate_(s), added = 0;
-    for (var d = today; d <= last; d = shiftDate_(d, 1)) {
-      if (s.deliveryDays.indexOf(weekday_(d)) === -1 || have[d]) continue;
-      var dayRule = s.dayRules[weekday_(d)] || {};
-      sh.appendRow([parseIsoDate_(d), "", dayRule.time || "", "", true]);
-      sh.getRange(sh.getLastRow(), 5).insertCheckboxes().setValue(true);
-      added++;
-    }
-    return added;
-  } finally { lock.releaseLock(); }
-}
-
 /* ---------- Weekly payments: who to send a Bit request to each week ---------- */
 function refreshWeeklyPayments_(s) {
   var ss = SpreadsheetApp.getActiveSpreadsheet();
@@ -394,13 +376,13 @@ function refreshWeeklyPayments_(s) {
   var c = function (n) { return head.indexOf(n); };
   var have = {};
   if (pay.getLastRow() > 1) pay.getRange(2, 1, pay.getLastRow() - 1, 2).getValues().forEach(function (r) { have[dateText_(r[0]) + "|" + r[1]] = true; });
-  var today = todayIso_(), last = lastShownDate_(s), added = 0;
+  var today = todayIso_(), last = lastShownDate_(s), added = 0, openDays = openDates_();
   orders.getRange(2, 1, orders.getLastRow() - 1, head.length).getValues().forEach(function (r) {
     if (c("Order type") < 0 || r[c("Order type")] !== "Weekly") return;
     if (r[c("Payment status")] === "Cancelled" || r[c("Delivery status")] === "Cancelled") return;
     var start = dateText_(r[c("Slot date")]);
     for (var d = start; d <= last; d = shiftDate_(d, 7)) {
-      if (d < today || have[d + "|" + r[c("Order ID")]]) continue;
+      if (d < today || !openDays[d] || have[d + "|" + r[c("Order ID")]]) continue;   // closed week = no payment
       pay.appendRow([parseIsoDate_(d), String(r[c("Order ID")]), r[c("Name")], r[c("Phone")], r[c("Final price")], r[c("Payment method")], false, false]);
       pay.getRange(pay.getLastRow(), 7, 1, 2).insertCheckboxes();
       added++;
@@ -420,7 +402,6 @@ function onOpen() {
 }
 function refreshAll() {
   var s = readSettings_();
-  fillUpcomingSlots_(s);
   refreshWeeklyPayments_(s);
 }
 

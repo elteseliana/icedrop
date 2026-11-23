@@ -10,6 +10,7 @@
 
 window.ICE_DROP_TEXTS = {
   en: {
+    payBitOnly: "Payment by Bit or PayBox. You'll get the details after ordering.",
     deliveryIncluded: "Weekly members and one-time orders both come with delivery included.",
     statusWeeklyBit: "Bit · weekly payment request",
     deliveriesLabel: "Deliveries:",
@@ -141,6 +142,7 @@ window.ICE_DROP_TEXTS = {
   },
 
   he: {
+    payBitOnly: "תשלום בביט או בפייבוקס. הפרטים יופיעו אחרי ההזמנה.",
     deliveryIncluded: "גם מנויים שבועיים וגם הזמנות חד-פעמיות כוללים משלוח.",
     statusWeeklyBit: "ביט · בקשת תשלום שבועית",
     deliveriesLabel: "משלוחים:",
